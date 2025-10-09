@@ -23,7 +23,7 @@ export async function POST(request) {
     const buffer = Buffer.from(bytes);
 
     // Use PDF.js for server-side parsing
-    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js');
+    const pdfjsLib = await import('pdfjs-dist');
     
     // Set up PDF.js
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
