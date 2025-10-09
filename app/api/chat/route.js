@@ -26,12 +26,19 @@ export async function POST(request) {
       if (fs.existsSync(pdfPath)) {
         try {
           const pdfBuffer = fs.readFileSync(pdfPath);
+          console.log('PDF buffer size:', pdfBuffer.length);
+          
           // Use dynamic import for pdf-parse
           const pdfParse = (await import('pdf-parse')).default;
           const data = await pdfParse(pdfBuffer);
+          
+          console.log('PDF parsing successful, text length:', data.text.length);
+          console.log('PDF text preview:', data.text.substring(0, 200));
+          
           handbookContent = data.text;
         } catch (pdfError) {
           console.error('PDF parsing error:', pdfError);
+          console.error('PDF parsing error details:', pdfError.message);
           // Fallback to sample content if PDF parsing fails
           handbookContent = `EMPLOYEE HANDBOOK - ABC Company
 
@@ -80,6 +87,10 @@ To request time off:
       }
     }
 
+    // Debug: Log which content is being used
+    console.log('Using handbook content length:', handbookContent.length);
+    console.log('Content source:', handbookContent.includes('ABC Company') ? 'FALLBACK TEXT' : 'PDF CONTENT');
+    
     // Build the system prompt
     const systemPrompt = `You are Gilda, a helpful virtual assistant. Your role is to answer questions ONLY based on the document provided below. 
 
