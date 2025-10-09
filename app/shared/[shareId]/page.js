@@ -10,6 +10,7 @@ export default function SharedGildaPage() {
   
   const [pdfContent, setPdfContent] = useState(null);
   const [pdfMetadata, setPdfMetadata] = useState(null);
+  const [documents, setDocuments] = useState([]);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -41,6 +42,7 @@ export default function SharedGildaPage() {
       if (response.ok) {
         setPdfContent(data.pdfContent);
         setPdfMetadata(data.pdfMetadata);
+        setDocuments(data.documents || []);
         setMessages([{
           role: 'assistant',
           content: `👋 Hello! I'm Gilda, your AI assistant. I have access to your company's policy documents and I'm here to help answer any questions you might have. What would you like to know?`
@@ -149,7 +151,17 @@ export default function SharedGildaPage() {
             </div>
           </div>
           <div className="text-sm opacity-90">
-            📄 {pdfMetadata?.filename || 'Company Documents'}
+            {documents && documents.length > 0 ? (
+              <div className="flex flex-wrap gap-2 items-center">
+                {documents.map((doc, index) => (
+                  <span key={index} className="bg-white bg-opacity-20 px-2 py-1 rounded-full text-xs">
+                    📄 {doc.filename}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              `📄 ${pdfMetadata?.filename || 'Company Documents'}`
+            )}
           </div>
         </div>
       </div>

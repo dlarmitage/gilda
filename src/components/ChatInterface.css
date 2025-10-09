@@ -20,12 +20,78 @@
   font-size: 24px;
 }
 
+.documents-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  opacity: 0.9;
+  flex-wrap: wrap;
+}
+
 .pdf-info {
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 14px;
   opacity: 0.9;
+}
+
+.document-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.document-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 6px 12px;
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  max-width: 200px;
+}
+
+.document-chip:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.document-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.document-name {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.remove-doc-btn {
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  color: white;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.remove-doc-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
 }
 
 .pdf-name {

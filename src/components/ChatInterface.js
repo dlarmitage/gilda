@@ -3,7 +3,7 @@ import { useUser } from "@stackframe/stack";
 import ReactMarkdown from 'react-markdown';
 import './ChatInterface.css';
 
-export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew, user }) {
+export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUploadNew, onRemoveDocument, user }) {
   const { signOut } = useUser();
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -109,6 +109,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew, us
         body: JSON.stringify({
           pdfContent,
           pdfMetadata,
+          documents,
           userId: user?.id
         })
       });
@@ -151,12 +152,32 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew, us
       <div className="chat-header">
         <div className="header-content">
           <h1>🤖 Gilda</h1>
-          <div className="pdf-info">
-            <span className="pdf-name">
-              📄 {pdfMetadata?.filename || 'Document'}
-            </span>
-            {pdfMetadata?.isDefault && (
-              <span className="sample-badge">Sample</span>
+          <div className="documents-container">
+            {documents && documents.length > 0 ? (
+              <div className="document-chips">
+                {documents.map((doc) => (
+                  <div key={doc.id} className="document-chip">
+                    <span className="document-icon">📄</span>
+                    <span className="document-name">{doc.filename}</span>
+                    <button 
+                      className="remove-doc-btn"
+                      onClick={() => onRemoveDocument(doc.id)}
+                      title="Remove this document"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="pdf-info">
+                <span className="pdf-name">
+                  📄 {pdfMetadata?.filename || 'Document'}
+                </span>
+                {pdfMetadata?.isDefault && (
+                  <span className="sample-badge">Sample</span>
+                )}
+              </div>
             )}
           </div>
         </div>

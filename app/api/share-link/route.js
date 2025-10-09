@@ -6,7 +6,7 @@ const shareLinks = new Map();
 
 export async function POST(request) {
   try {
-    const { pdfContent, pdfMetadata, userId } = await request.json();
+    const { pdfContent, pdfMetadata, documents, userId } = await request.json();
 
     if (!pdfContent) {
       return NextResponse.json(
@@ -23,6 +23,7 @@ export async function POST(request) {
       id: shareId,
       pdfContent,
       pdfMetadata,
+      documents,
       userId,
       createdAt: new Date().toISOString(),
       accessCount: 0,
@@ -78,6 +79,7 @@ export async function GET(request) {
       shareId: shareData.id,
       pdfContent: shareData.pdfContent,
       pdfMetadata: shareData.pdfMetadata,
+      documents: shareData.documents,
       createdAt: shareData.createdAt,
       accessCount: shareData.accessCount
     });

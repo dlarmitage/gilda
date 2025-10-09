@@ -11,6 +11,7 @@ export default function App() {
   const [pdfLoaded, setPdfLoaded] = useState(false);
   const [pdfContent, setPdfContent] = useState(null);
   const [pdfMetadata, setPdfMetadata] = useState(null);
+  const [documents, setDocuments] = useState([]); // Array of individual documents
   const [isLoading, setIsLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
 
@@ -32,17 +33,56 @@ export default function App() {
 
   const handlePdfUpload = async (uploadData) => {
     try {
-      // For now, just store the PDF data locally without saving to database
-      setPdfContent(uploadData.content);
-      setPdfMetadata({
-        filename: uploadData.filename,
-        size: uploadData.content.length,
-        uploadedAt: new Date().toISOString(),
-        isDefault: false
-      });
+      // If uploadData contains individual files, store them
+      if (uploadData.files && uploadData.files.length > 0) {
+        const newDocuments = uploadData.files.map(file => ({
+          id: Date.now() + Math.random(), // Simple unique ID
+          filename: file.filename,
+          content: file.content,
+          size: file.size,
+          uploadedAt: file.uploadedAt || new Date().toISOString()
+        }));
+        
+        setDocuments(prev => [...prev, ...newDocuments]);
+        
+        // Combine all documents for chat
+        const allDocuments = [...documents, ...newDocuments];
+        const combinedContent = allDocuments
+          .map(doc => `=== ${doc.filename} ===\n\n${doc.content}\n\n`)
+          .join('');
+        
+        setPdfContent(combinedContent);
+        setPdfMetadata({
+          filename: `${allDocuments.length} documents`,
+          size: combinedContent.length,
+          uploadedAt: new Date().toISOString(),
+          isDefault: false,
+          fileCount: allDocuments.length
+        });
+      } else {
+        // Fallback for single file uploads
+        const newDoc = {
+          id: Date.now() + Math.random(),
+          filename: uploadData.filename,
+          content: uploadData.content,
+          size: uploadData.content.length,
+          uploadedAt: new Date().toISOString()
+        };
+        
+        setDocuments([newDoc]);
+        setPdfContent(uploadData.content);
+        setPdfMetadata({
+          filename: uploadData.filename,
+          size: uploadData.content.length,
+          uploadedAt: new Date().toISOString(),
+          isDefault: false,
+          fileCount: 1
+        });
+      }
+      
       setPdfLoaded(true);
       setShowUpload(false);
-      console.log('PDF uploaded successfully:', uploadData.filename);
+      console.log('PDFs uploaded successfully');
     } catch (error) {
       console.error('Error processing PDF:', error);
     }
@@ -50,6 +90,32 @@ export default function App() {
 
   const handleUploadNew = () => {
     setShowUpload(true);
+  };
+
+  const handleRemoveDocument = (documentId) => {
+    const updatedDocuments = documents.filter(doc => doc.id !== documentId);
+    setDocuments(updatedDocuments);
+    
+    if (updatedDocuments.length === 0) {
+      // No documents left
+      setPdfLoaded(false);
+      setPdfContent(null);
+      setPdfMetadata(null);
+    } else {
+      // Update combined content and metadata
+      const combinedContent = updatedDocuments
+        .map(doc => `=== ${doc.filename} ===\n\n${doc.content}\n\n`)
+        .join('');
+      
+      setPdfContent(combinedContent);
+      setPdfMetadata({
+        filename: `${updatedDocuments.length} documents`,
+        size: combinedContent.length,
+        uploadedAt: new Date().toISOString(),
+        isDefault: false,
+        fileCount: updatedDocuments.length
+      });
+    }
   };
 
   const handleBackToChat = () => {
@@ -83,7 +149,9 @@ export default function App() {
       <ChatInterface
         pdfContent={pdfContent}
         pdfMetadata={pdfMetadata}
+        documents={documents}
         onUploadNew={handleUploadNew}
+        onRemoveDocument={handleRemoveDocument}
         user={user}
       />
     </div>
