@@ -1,54 +1,21 @@
 export async function POST(request) {
   try {
-    const formData = await request.formData();
-    const file = formData.get('pdf');
+    const { content, filename } = await request.json();
 
-    if (!file) {
+    if (!content) {
       return Response.json(
-        { error: 'No PDF file provided' },
+        { error: 'No PDF content provided' },
         { status: 400 }
       );
     }
 
-    // Validate file type
-    if (!file.type || !file.type.includes('pdf')) {
-      return Response.json(
-        { error: 'File must be a PDF' },
-        { status: 400 }
-      );
-    }
-
-    // Convert file to Uint8Array for PDF.js
-    const bytes = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(bytes);
-
-    // Use PDF.js for server-side parsing
-    const pdfjsLib = await import('pdfjs-dist');
-    
-    // Set up PDF.js
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
-    
-    const pdf = await pdfjsLib.getDocument({
-      data: uint8Array,
-      useSystemFonts: true
-    }).promise;
-    
-    let fullText = '';
-    
-    // Extract text from each page
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items.map(item => item.str).join(' ');
-      fullText += pageText + '\n\n';
-    }
-
+    // Simple server-side processing - just validate and return
     return Response.json({
       success: true,
-      content: fullText.trim(),
+      content: content,
       metadata: {
-        filename: file.name,
-        pages: pdf.numPages,
+        filename: filename || 'Uploaded PDF',
+        pages: 'Client-side processed',
         uploadedAt: new Date().toISOString(),
         isDefault: false
       }

@@ -18,27 +18,81 @@ export default function PDFUpload({ onPdfUpload }) {
     setIsUploading(true);
 
     try {
-      // For now, let's use a simple approach - just upload to server
-      // and let the server handle the parsing with better error messages
-      const formData = new FormData();
-      formData.append('pdf', file);
+      // Use PDF.js for client-side PDF text extraction
+      const pdfText = await extractTextFromPDF(file);
+      
+      if (pdfText && pdfText.trim().length > 0) {
+        // Send extracted text to server for processing
+        const response = await fetch('/api/upload-pdf', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: pdfText,
+            filename: file.name
+          })
+        });
 
-      const response = await fetch('/api/upload-pdf', {
-        method: 'POST',
-        body: formData,
-      });
+        const data = await response.json();
 
-      const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to process PDF');
+        }
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to upload PDF');
+        onPdfUpload(data);
+      } else {
+        throw new Error('Could not extract text from PDF. The PDF might be image-based or corrupted.');
       }
-
-      onPdfUpload(data);
     } catch (err) {
       setError(err.message);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  // Client-side PDF text extraction using PDF.js (following official examples)
+  const extractTextFromPDF = async (file) => {
+    try {
+      // Load PDF.js dynamically following the official documentation
+      const pdfjsLib = await import('pdfjs-dist');
+      
+      // Configure the worker following the official setup guide
+      // Use the CDN version as recommended in the documentation
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+      
+      // Convert file to ArrayBuffer as required by PDF.js
+      const arrayBuffer = await file.arrayBuffer();
+      
+      // Load the PDF document following the Hello World example
+      const pdf = await pdfjsLib.getDocument({
+        data: arrayBuffer,
+        // Use system fonts to avoid font loading issues
+        useSystemFonts: true
+      }).promise;
+      
+      let fullText = '';
+      
+      // Extract text from each page following the official examples
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        
+        // Combine text items from the page
+        const pageText = textContent.items
+          .map(item => item.str)
+          .join(' ')
+          .trim();
+        
+        if (pageText) {
+          fullText += pageText + '\n\n';
+        }
+      }
+      
+      return fullText.trim();
+    } catch (error) {
+      console.error('PDF.js extraction error:', error);
+      throw new Error(`PDF processing failed: ${error.message}`);
     }
   };
 
