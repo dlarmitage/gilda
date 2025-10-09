@@ -21,9 +21,26 @@ export async function POST(request) {
 
     // If no PDF content provided, load the default PDF
     if (!handbookContent) {
-      const pdfPath = path.join(process.cwd(), 'uploads', 'sample_employee_handbook.pdf');
+      // Try multiple possible paths for the PDF file
+      const possiblePaths = [
+        path.join(process.cwd(), 'uploads', 'sample_employee_handbook.pdf'),
+        path.join(__dirname, '..', '..', '..', 'uploads', 'sample_employee_handbook.pdf'),
+        path.join(process.cwd(), 'sample_employee_handbook.pdf'),
+        path.join(__dirname, 'sample_employee_handbook.pdf')
+      ];
       
-      if (fs.existsSync(pdfPath)) {
+      let pdfPath = null;
+      console.log('Checking for PDF at possible paths:');
+      for (const testPath of possiblePaths) {
+        console.log('  Checking:', testPath, '- exists:', fs.existsSync(testPath));
+        if (fs.existsSync(testPath)) {
+          pdfPath = testPath;
+          console.log('Found PDF at:', pdfPath);
+          break;
+        }
+      }
+      
+      if (pdfPath) {
         try {
           const pdfBuffer = fs.readFileSync(pdfPath);
           console.log('PDF buffer size:', pdfBuffer.length);
