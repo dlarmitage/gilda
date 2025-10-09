@@ -18,9 +18,9 @@ export async function POST(request) {
       );
     }
 
-    // Convert file to buffer
+    // Convert file to Uint8Array for PDF.js
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const uint8Array = new Uint8Array(bytes);
 
     // Use PDF.js for server-side parsing
     const pdfjsLib = await import('pdfjs-dist');
@@ -29,7 +29,7 @@ export async function POST(request) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
     
     const pdf = await pdfjsLib.getDocument({
-      data: buffer,
+      data: uint8Array,
       useSystemFonts: true
     }).promise;
     
