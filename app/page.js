@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useUser } from "@stackframe/stack";
 import { SignIn, SignUp } from "@stackframe/stack";
-import App from '@/src/App';
+import App from '../src/App';
 
 export default function Home() {
   const user = useUser();
