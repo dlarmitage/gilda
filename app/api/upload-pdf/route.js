@@ -18,27 +18,59 @@ export async function POST(request) {
       );
     }
 
-    // For now, return a success response with placeholder content
-    // This allows the upload to work while we resolve the pdf-parse issue
-    return Response.json({
-      success: true,
-      content: `This is a placeholder for your uploaded PDF: ${file.name}
+    // Convert file to buffer
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
-Since PDF parsing is temporarily having issues in production, you can still use the chat functionality with the sample employee handbook content. The system will use the default handbook content for responses.
+    try {
+      // Try using pdf-parse with a more robust approach
+      const pdfParse = (await import('pdf-parse')).default;
+      
+      // Use a more conservative approach to avoid the test file issue
+      const data = await pdfParse(buffer, {
+        max: 0,
+        // Try to avoid the problematic test file lookup
+        normalizeWhitespace: false,
+        disableCombineTextItems: false
+      });
 
-To get the full functionality working with your custom PDF, we may need to implement an alternative PDF parsing solution or resolve the pdf-parse library compatibility issues in the Vercel environment.`,
-      metadata: {
-        filename: file.name,
-        pages: 'Unknown (parsing temporarily disabled)',
-        uploadedAt: new Date().toISOString(),
-        isDefault: false
+      if (!data.text || data.text.trim().length === 0) {
+        throw new Error('PDF appears to be empty or contains no extractable text');
       }
-    });
+
+      return Response.json({
+        success: true,
+        content: data.text,
+        metadata: {
+          filename: file.name,
+          pages: data.numpages || 'Unknown',
+          uploadedAt: new Date().toISOString(),
+          isDefault: false
+        }
+      });
+
+    } catch (pdfError) {
+      console.error('PDF parsing error:', pdfError);
+      
+      // If PDF parsing fails, return an error with helpful message
+      return Response.json(
+        { 
+          error: `Unable to extract text from your PDF. This could be because:
+- The PDF is password-protected
+- The PDF contains only images (scanned document)
+- The PDF is corrupted
+- The PDF uses a format that's not supported
+
+Please try with a different PDF or contact support if the issue persists.` 
+        },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
     console.error('Error processing PDF:', error);
     return Response.json(
-      { error: 'Failed to process PDF file' },
+      { error: 'Failed to process PDF file. Please try again.' },
       { status: 500 }
     );
   }
