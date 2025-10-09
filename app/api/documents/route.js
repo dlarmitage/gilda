@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getUserPDFs, createPDFUpload, getActivePDF } from '../../../../lib/db';
+import { getUserPDFs, createPDFUpload, getActivePDF } from '../../../lib/db';
 
 // GET - Retrieve user's documents
 export async function GET(request) {
