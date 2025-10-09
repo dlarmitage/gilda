@@ -41,9 +41,47 @@ export default function App() {
 
   const checkPdfStatus = async () => {
     try {
-      // For now, skip the database check and just set loading to false
-      // This allows the app to proceed to the upload interface
-      console.log('User authenticated, proceeding to upload interface');
+      // Check for existing documents in database for this user
+      const userId = user?.id;
+      
+      if (userId) {
+        const response = await fetch(`/api/documents?userId=${userId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.documents && data.documents.length > 0) {
+            console.log('Found existing documents for user:', data.documents.length);
+            setDocuments(data.documents);
+            
+            // Combine existing documents for chat
+            const combinedContent = data.documents
+              .filter(doc => doc.content) // Only include documents with content
+              .map(doc => `=== ${doc.filename} ===\n\n${doc.content}\n\n`)
+              .join('');
+            
+            if (combinedContent) {
+              setPdfContent(combinedContent);
+              setPdfMetadata({
+                filename: `${data.documents.length} documents`,
+                size: combinedContent.length,
+                uploadedAt: new Date().toISOString(),
+                isDefault: false,
+                isMultiple: data.documents.length > 1
+              });
+              
+              setPdfLoaded(true);
+              setIsLoading(false);
+              return;
+            }
+          }
+        } else {
+          console.error('Failed to fetch documents:', response.statusText);
+        }
+      }
+      
+      // No existing documents found, proceed to upload interface
+      console.log('No existing documents found, proceeding to upload interface');
     } catch (error) {
       console.error('Error checking PDF status:', error);
     } finally {
@@ -53,6 +91,9 @@ export default function App() {
 
   const handlePdfUpload = async (uploadData) => {
     try {
+      const userId = user?.id;
+      let allDocuments = [];
+      
       // If uploadData contains individual files, store them
       if (uploadData.files && uploadData.files.length > 0) {
         const newDocuments = uploadData.files.map(file => ({
@@ -63,22 +104,7 @@ export default function App() {
           uploadedAt: file.uploadedAt || new Date().toISOString()
         }));
         
-        setDocuments(prev => [...prev, ...newDocuments]);
-        
-        // Combine all documents for chat
-        const allDocuments = [...documents, ...newDocuments];
-        const combinedContent = allDocuments
-          .map(doc => `=== ${doc.filename} ===\n\n${doc.content}\n\n`)
-          .join('');
-        
-        setPdfContent(combinedContent);
-        setPdfMetadata({
-          filename: `${allDocuments.length} documents`,
-          size: combinedContent.length,
-          uploadedAt: new Date().toISOString(),
-          isDefault: false,
-          fileCount: allDocuments.length
-        });
+        allDocuments = [...documents, ...newDocuments];
       } else {
         // Fallback for single file uploads
         const newDoc = {
@@ -89,16 +115,42 @@ export default function App() {
           uploadedAt: new Date().toISOString()
         };
         
-        setDocuments([newDoc]);
-        setPdfContent(uploadData.content);
-        setPdfMetadata({
-          filename: uploadData.filename,
-          size: uploadData.content.length,
-          uploadedAt: new Date().toISOString(),
-          isDefault: false,
-          fileCount: 1
-        });
+        allDocuments = [newDoc];
       }
+      
+      // Save documents to database if user is authenticated
+      if (userId && allDocuments.length > 0) {
+        const response = await fetch('/api/documents', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            documents: allDocuments
+          })
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to save documents to database');
+        }
+      }
+      
+      setDocuments(allDocuments);
+      
+      // Combine all documents for chat
+      const combinedContent = allDocuments
+        .map(doc => `=== ${doc.filename} ===\n\n${doc.content}\n\n`)
+        .join('');
+      
+      setPdfContent(combinedContent);
+      setPdfMetadata({
+        filename: `${allDocuments.length} documents`,
+        size: combinedContent.length,
+        uploadedAt: new Date().toISOString(),
+        isDefault: false,
+        fileCount: allDocuments.length
+      });
       
       setPdfLoaded(true);
       setShowUpload(false);
@@ -112,9 +164,32 @@ export default function App() {
     setShowUpload(true);
   };
 
-  const handleRemoveDocument = (documentId) => {
+  const handleRemoveDocument = async (documentId) => {
     const updatedDocuments = documents.filter(doc => doc.id !== documentId);
     setDocuments(updatedDocuments);
+    
+    // Update database if user is authenticated
+    const userId = user?.id;
+    if (userId && updatedDocuments.length >= 0) {
+      try {
+        const response = await fetch('/api/documents', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId,
+            documents: updatedDocuments
+          })
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to update documents in database');
+        }
+      } catch (error) {
+        console.error('Error updating documents:', error);
+      }
+    }
     
     if (updatedDocuments.length === 0) {
       // No documents left
