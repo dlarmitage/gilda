@@ -5,12 +5,16 @@ export default function PDFUpload({ onPdfUpload }) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [combinedContent, setCombinedContent] = useState('');
 
-  const handleFile = async (file) => {
-    if (!file) return;
+  const handleFiles = async (files) => {
+    if (!files || files.length === 0) return;
 
-    if (file.type !== 'application/pdf') {
-      setError('Please upload a PDF file');
+    // Validate all files are PDFs
+    const invalidFiles = Array.from(files).filter(file => file.type !== 'application/pdf');
+    if (invalidFiles.length > 0) {
+      setError(`Please upload only PDF files. Found ${invalidFiles.length} non-PDF file(s).`);
       return;
     }
 
@@ -18,37 +22,64 @@ export default function PDFUpload({ onPdfUpload }) {
     setIsUploading(true);
 
     try {
-      // Use PDF.js for client-side PDF text extraction
-      const pdfText = await extractTextFromPDF(file);
+      const filePromises = Array.from(files).map(async (file) => {
+        const pdfText = await extractTextFromPDF(file);
+        return {
+          filename: file.name,
+          content: pdfText,
+          size: file.size,
+          uploadedAt: new Date().toISOString()
+        };
+      });
+
+      const processedFiles = await Promise.all(filePromises);
       
-      if (pdfText && pdfText.trim().length > 0) {
-        // Send extracted text to server for processing
-        const response = await fetch('/api/upload-pdf', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            content: pdfText,
-            filename: file.name
-          })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to process PDF');
-        }
-
-        onPdfUpload(data);
-      } else {
-        throw new Error('Could not extract text from PDF. The PDF might be image-based or corrupted.');
+      // Filter out files that couldn't be processed
+      const validFiles = processedFiles.filter(file => file.content && file.content.trim().length > 0);
+      
+      if (validFiles.length === 0) {
+        throw new Error('Could not extract text from any PDFs. The PDFs might be image-based or corrupted.');
       }
+
+      // Combine all PDF content
+      const combinedText = validFiles
+        .map(file => `=== ${file.filename} ===\n\n${file.content}\n\n`)
+        .join('');
+
+      // Update state
+      setUploadedFiles(validFiles);
+      setCombinedContent(combinedText);
+
+      // Send combined content to server for processing
+      const response = await fetch('/api/upload-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: combinedText,
+          filename: `${validFiles.length} documents`,
+          fileCount: validFiles.length,
+          files: validFiles.map(f => f.filename)
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to process PDFs');
+      }
+
+      onPdfUpload(data);
     } catch (err) {
       setError(err.message);
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleFile = async (file) => {
+    await handleFiles([file]);
   };
 
   // Client-side PDF text extraction using PDF.js (following official examples)
@@ -100,8 +131,8 @@ export default function PDFUpload({ onPdfUpload }) {
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    handleFile(file);
+    const files = e.dataTransfer.files;
+    handleFiles(files);
   };
 
   const handleDragOver = (e) => {
@@ -114,16 +145,17 @@ export default function PDFUpload({ onPdfUpload }) {
   };
 
   const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    handleFile(file);
+    const files = e.target.files;
+    handleFiles(files);
   };
 
   return (
     <div className="pdf-upload-container">
       <div className="upload-card">
-        <h2>Upload Document</h2>
+        <h2>Upload Documents</h2>
         <p className="upload-description">
-          Upload your PDF document to get started with Gilda, your virtual assistant.
+          Upload one or more PDF documents to get started with Gilda, your virtual assistant. 
+          You can upload multiple company policy documents, handbooks, or manuals at once.
         </p>
 
         <div
@@ -141,21 +173,39 @@ export default function PDFUpload({ onPdfUpload }) {
             <>
               <div className="upload-icon">📄</div>
               <p className="drop-text">
-                Drag and drop your PDF here, or click to browse
+                Drag and drop your PDFs here, or click to browse
               </p>
               <input
                 type="file"
                 accept=".pdf"
+                multiple
                 onChange={handleFileSelect}
                 className="file-input"
                 id="pdf-input"
               />
               <label htmlFor="pdf-input" className="browse-button">
-                Choose PDF File
+                Choose PDF Files
               </label>
             </>
           )}
         </div>
+
+        {uploadedFiles.length > 0 && (
+          <div className="uploaded-files">
+            <h3>📚 Uploaded Documents ({uploadedFiles.length})</h3>
+            <div className="files-list">
+              {uploadedFiles.map((file, index) => (
+                <div key={index} className="file-item">
+                  <span className="file-icon">📄</span>
+                  <div className="file-info">
+                    <span className="file-name">{file.filename}</span>
+                    <span className="file-size">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="error-message">
