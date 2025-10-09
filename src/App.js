@@ -17,7 +17,27 @@ export default function App() {
 
   useEffect(() => {
     checkPdfStatus();
+    // Load default PDF document
+    loadDefaultDocument();
   }, []);
+
+  const loadDefaultDocument = () => {
+    // Add the default sample employee handbook to documents
+    const defaultDoc = {
+      id: 'default-sample-handbook',
+      filename: 'sample_employee_handbook.pdf',
+      content: null, // Will be loaded by the API
+      size: null,
+      uploadedAt: new Date().toISOString(),
+      isDefault: true
+    };
+    
+    setDocuments([defaultDoc]);
+    setPdfMetadata({
+      filename: 'sample_employee_handbook.pdf',
+      isDefault: true
+    });
+  };
 
   const checkPdfStatus = async () => {
     try {
