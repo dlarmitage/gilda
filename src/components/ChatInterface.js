@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './ChatInterface.css';
 
-export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew }) {
+export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew, user }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,11 +40,13 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew }) 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.accessToken}`,
         },
         body: JSON.stringify({
           message: userMessage,
           conversationHistory: conversationHistory,
           pdfContent: pdfContent,
+          userId: user?.id,
         }),
       });
 
