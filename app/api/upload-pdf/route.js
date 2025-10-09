@@ -18,29 +18,23 @@ export async function POST(request) {
       );
     }
 
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Use dynamic import for pdf-parse to avoid build issues
-    const pdfParse = (await import('pdf-parse')).default;
-    
-    // Extract text from PDF with options to avoid test file issues
-    const data = await pdfParse(buffer, {
-      // Prevent pdf-parse from looking for test files
-      max: 0
-    });
-
+    // For now, return a success response with placeholder content
+    // This allows the upload to work while we resolve the pdf-parse issue
     return Response.json({
       success: true,
-      content: data.text,
+      content: `This is a placeholder for your uploaded PDF: ${file.name}
+
+Since PDF parsing is temporarily having issues in production, you can still use the chat functionality with the sample employee handbook content. The system will use the default handbook content for responses.
+
+To get the full functionality working with your custom PDF, we may need to implement an alternative PDF parsing solution or resolve the pdf-parse library compatibility issues in the Vercel environment.`,
       metadata: {
         filename: file.name,
-        pages: data.numpages,
+        pages: 'Unknown (parsing temporarily disabled)',
         uploadedAt: new Date().toISOString(),
         isDefault: false
       }
     });
+
   } catch (error) {
     console.error('Error processing PDF:', error);
     return Response.json(
