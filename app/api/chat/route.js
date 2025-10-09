@@ -116,7 +116,8 @@ Remember: Only use the information from the document above to answer questions.`
     const assistantMessage = completion.choices[0].message.content;
 
     return Response.json({
-      message: assistantMessage,
+      response: assistantMessage,
+      message: assistantMessage, // Keep both for compatibility
       conversationHistory: [
         ...(conversationHistory || []),
         { role: 'user', content: message },
