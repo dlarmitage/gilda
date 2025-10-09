@@ -4,6 +4,7 @@ uploads/*
 !uploads/sample_employee_handbook.pdf
 .next/
 .DS_Store
+test/
 out/
 *.log
 

@@ -26,12 +26,9 @@ export async function POST(request) {
       if (fs.existsSync(pdfPath)) {
         try {
           const pdfBuffer = fs.readFileSync(pdfPath);
-          // Use dynamic import for pdf-parse with options to avoid test file issues
+          // Use dynamic import for pdf-parse
           const pdfParse = (await import('pdf-parse')).default;
-          const data = await pdfParse(pdfBuffer, {
-            // Prevent pdf-parse from looking for test files
-            max: 0
-          });
+          const data = await pdfParse(pdfBuffer);
           handbookContent = data.text;
         } catch (pdfError) {
           console.error('PDF parsing error:', pdfError);
