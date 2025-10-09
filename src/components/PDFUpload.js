@@ -57,9 +57,9 @@ export default function PDFUpload({ onPdfUpload }) {
       // Load PDF.js dynamically following the official documentation
       const pdfjsLib = await import('pdfjs-dist');
       
-      // Configure the worker following the official setup guide
-      // Use the CDN version as recommended in the documentation
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+      // Configure the worker to use a local copy to avoid CORS issues
+      // Use the local worker file from the public directory
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
       
       // Convert file to ArrayBuffer as required by PDF.js
       const arrayBuffer = await file.arrayBuffer();
