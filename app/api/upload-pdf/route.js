@@ -1,0 +1,53 @@
+export async function POST(request) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get('pdf');
+
+    if (!file) {
+      return Response.json(
+        { error: 'No PDF file provided' },
+        { status: 400 }
+      );
+    }
+
+    // Validate file type
+    if (!file.type || !file.type.includes('pdf')) {
+      return Response.json(
+        { error: 'File must be a PDF' },
+        { status: 400 }
+      );
+    }
+
+    // Convert file to buffer
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Use dynamic import for pdf-parse to avoid build issues
+    const pdfParse = (await import('pdf-parse')).default;
+    
+    // Extract text from PDF with options to avoid test file issues
+    const data = await pdfParse(buffer, {
+      // Prevent pdf-parse from looking for test files
+      max: 0,
+      version: 'v1.10.100'
+    });
+
+    return Response.json({
+      success: true,
+      content: data.text,
+      metadata: {
+        filename: file.name,
+        pages: data.numpages,
+        uploadedAt: new Date().toISOString(),
+        isDefault: false
+      }
+    });
+  } catch (error) {
+    console.error('Error processing PDF:', error);
+    return Response.json(
+      { error: 'Failed to process PDF file' },
+      { status: 500 }
+    );
+  }
+}
+

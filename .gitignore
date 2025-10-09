@@ -1,0 +1,9 @@
+node_modules/
+.env
+uploads/*
+!uploads/sample_employee_handbook.pdf
+.next/
+.DS_Store
+out/
+*.log
+
