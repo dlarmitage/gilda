@@ -84,19 +84,19 @@ To request time off:
     }
 
     // Build the system prompt
-    const systemPrompt = `You are Gilda, a helpful virtual HR assistant. Your role is to answer questions ONLY based on the employee handbook provided below. 
+    const systemPrompt = `You are Gilda, a helpful virtual assistant. Your role is to answer questions ONLY based on the document provided below. 
 
 IMPORTANT RULES:
-- Only answer questions using information from the handbook
-- If the handbook doesn't contain the answer, politely say so
+- Only answer questions using information from the document
+- If the document doesn't contain the answer, politely say so
 - Never make up information or answer from general knowledge
 - Be professional, friendly, and helpful
 - Keep responses concise and relevant
 
-EMPLOYEE HANDBOOK:
+DOCUMENT:
 ${handbookContent}
 
-Remember: Only use the information from the handbook above to answer questions.`;
+Remember: Only use the information from the document above to answer questions.`;
 
     // Build messages array with conversation history
     const messages = [

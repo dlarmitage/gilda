@@ -164,6 +164,57 @@
   word-wrap: break-word;
 }
 
+/* Markdown styling within assistant messages */
+.message.assistant .message-content h1,
+.message.assistant .message-content h2,
+.message.assistant .message-content h3 {
+  margin: 10px 0 5px 0;
+  color: #333;
+}
+
+.message.assistant .message-content p {
+  margin: 8px 0;
+}
+
+.message.assistant .message-content ul,
+.message.assistant .message-content ol {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.message.assistant .message-content li {
+  margin: 5px 0;
+}
+
+.message.assistant .message-content strong {
+  font-weight: 600;
+  color: #667eea;
+}
+
+.message.assistant .message-content code {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.message.assistant .message-content pre {
+  background: #f0f0f0;
+  padding: 10px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.message.assistant .message-content blockquote {
+  border-left: 4px solid #667eea;
+  padding-left: 15px;
+  margin: 10px 0;
+  color: #666;
+  font-style: italic;
+}
+
 .message.user .message-content {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;

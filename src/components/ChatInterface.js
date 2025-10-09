@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import './ChatInterface.css';
 
 export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew }) {
@@ -7,6 +8,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew }) 
   const [isLoading, setIsLoading] = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -16,18 +18,18 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew }) 
     scrollToBottom();
   }, [messages]);
 
-  const exampleQuestions = [
-    "What is the vacation policy?",
-    "How do I request time off?",
-    "What are the company holidays?",
-    "What benefits are available?"
-  ];
+  const exampleQuestions = [];
 
   const handleSendMessage = async (messageText = inputMessage) => {
     if (!messageText.trim() || isLoading) return;
 
     const userMessage = messageText.trim();
     setInputMessage('');
+    
+    // Focus input after sending message
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 50);
     
     // Add user message to display
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
@@ -57,12 +59,22 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew }) 
       
       // Update conversation history
       setConversationHistory(data.conversationHistory);
+      
+      // Focus back on input after AI responds
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prev => [
         ...prev,
         { role: 'assistant', content: '❌ Sorry, I encountered an error. Please try again.' }
       ]);
+      
+      // Focus back on input after error
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     } finally {
       setIsLoading(false);
     }
@@ -79,10 +91,10 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew }) 
     <div className="chat-container">
       <div className="chat-header">
         <div className="header-content">
-          <h1>🤖 Gilda HR Assistant</h1>
+          <h1>🤖 Gilda</h1>
           <div className="pdf-info">
             <span className="pdf-name">
-              📄 {pdfMetadata?.filename || 'Employee Handbook'}
+              📄 {pdfMetadata?.filename || 'Document'}
             </span>
             {pdfMetadata?.isDefault && (
               <span className="sample-badge">Sample</span>
@@ -99,19 +111,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew }) 
           <div className="welcome-screen">
             <div className="welcome-icon">👋</div>
             <h2>Welcome to Gilda!</h2>
-            <p>I'm your virtual HR assistant. Ask me anything about your employee handbook.</p>
-            <div className="example-questions">
-              <p className="examples-title">Try asking:</p>
-              {exampleQuestions.map((question, index) => (
-                <button
-                  key={index}
-                  className="example-question"
-                  onClick={() => handleSendMessage(question)}
-                >
-                  {question}
-                </button>
-              ))}
-            </div>
+            <p>I'm your virtual assistant. Ask me anything about your uploaded document.</p>
           </div>
         )}
 
@@ -121,7 +121,11 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew }) 
               {msg.role === 'user' ? '👤' : '🤖'}
             </div>
             <div className="message-content">
-              {msg.content}
+              {msg.role === 'assistant' ? (
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              ) : (
+                msg.content
+              )}
             </div>
           </div>
         ))}
@@ -142,11 +146,12 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew }) 
 
       <div className="chat-input-container">
         <textarea
+          ref={inputRef}
           className="chat-input"
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="Ask me anything about your employee handbook..."
+          placeholder="Ask me anything about your document..."
           rows="1"
           disabled={isLoading}
         />

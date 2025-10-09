@@ -121,9 +121,9 @@ export default function PDFUpload({ onPdfUpload }) {
   return (
     <div className="pdf-upload-container">
       <div className="upload-card">
-        <h2>Upload Employee Handbook</h2>
+        <h2>Upload Document</h2>
         <p className="upload-description">
-          Upload your employee handbook PDF to get started with Gilda, your virtual HR assistant.
+          Upload your PDF document to get started with Gilda, your virtual assistant.
         </p>
 
         <div
