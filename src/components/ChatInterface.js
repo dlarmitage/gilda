@@ -9,6 +9,9 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew, us
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareLink, setShareLink] = useState('');
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -90,6 +93,59 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew, us
     }
   };
 
+  const handleShare = async () => {
+    if (!pdfContent) {
+      alert('Please upload a PDF first before sharing');
+      return;
+    }
+
+    setIsGeneratingLink(true);
+    try {
+      const response = await fetch('/api/share-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pdfContent,
+          pdfMetadata,
+          userId: user?.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setShareLink(data.shareUrl);
+        setShowShareModal(true);
+      } else {
+        throw new Error(data.error || 'Failed to create share link');
+      }
+    } catch (error) {
+      console.error('Error creating share link:', error);
+      alert('Failed to create share link. Please try again.');
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      alert('Share link copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = shareLink;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('Share link copied to clipboard!');
+    }
+  };
+
   return (
     <div className="chat-container">
       <div className="chat-header">
@@ -105,6 +161,9 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew, us
           </div>
         </div>
         <div className="header-actions">
+          <button className="share-btn" onClick={handleShare} disabled={!pdfContent || isGeneratingLink}>
+            {isGeneratingLink ? '⏳' : '🔗'} {isGeneratingLink ? 'Creating...' : 'Share'}
+          </button>
           <button className="upload-new-btn" onClick={onUploadNew}>
             Upload New PDF
           </button>
@@ -171,6 +230,43 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew, us
           ➤
         </button>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="share-modal-overlay">
+          <div className="share-modal">
+            <div className="share-modal-header">
+              <h3>🔗 Share Gilda</h3>
+              <button className="close-btn" onClick={() => setShowShareModal(false)}>
+                ×
+              </button>
+            </div>
+            <div className="share-modal-content">
+              <p>Share this link with your team so they can ask questions about the company policies without needing to log in.</p>
+              <div className="share-link-container">
+                <input
+                  type="text"
+                  value={shareLink}
+                  readOnly
+                  className="share-link-input"
+                />
+                <button className="copy-btn" onClick={copyToClipboard}>
+                  📋 Copy
+                </button>
+              </div>
+              <div className="share-info">
+                <p><strong>📋 What they can do:</strong></p>
+                <ul>
+                  <li>Ask questions about company policies</li>
+                  <li>Get instant answers from Gilda</li>
+                  <li>No login required</li>
+                  <li>Access expires after 30 days</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
