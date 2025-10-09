@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
+import { useUser } from "@stackframe/stack";
 import ReactMarkdown from 'react-markdown';
 import './ChatInterface.css';
 
 export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew, user }) {
+  const { signOut } = useUser();
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -103,9 +105,14 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew, us
             )}
           </div>
         </div>
-        <button className="upload-new-btn" onClick={onUploadNew}>
-          Upload New PDF
-        </button>
+        <div className="header-actions">
+          <button className="upload-new-btn" onClick={onUploadNew}>
+            Upload New PDF
+          </button>
+          <button className="signout-btn" onClick={signOut}>
+            Sign Out
+          </button>
+        </div>
       </div>
 
       <div className="chat-messages">
