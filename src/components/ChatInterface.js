@@ -42,7 +42,6 @@ export default function ChatInterface({ pdfContent, pdfMetadata, onUploadNew, us
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.accessToken}`,
         },
         body: JSON.stringify({
           message: userMessage,
