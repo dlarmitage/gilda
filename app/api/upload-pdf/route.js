@@ -1,6 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-
 export async function POST(request) {
   try {
     const formData = await request.formData();
@@ -25,34 +22,33 @@ export async function POST(request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create the missing test file structure that pdf-parse expects
-    const testDir = path.join(process.cwd(), 'test', 'data');
-    const testFile = path.join(testDir, '05-versions-space.pdf');
+    // Use PDF.js for server-side parsing
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js');
     
-    try {
-      // Create directory if it doesn't exist
-      if (!fs.existsSync(testDir)) {
-        fs.mkdirSync(testDir, { recursive: true });
-      }
-      
-      // Create a dummy test file if it doesn't exist
-      if (!fs.existsSync(testFile)) {
-        fs.writeFileSync(testFile, Buffer.from('dummy test file'));
-      }
-    } catch (dirError) {
-      console.log('Could not create test directory, continuing anyway');
+    // Set up PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+    
+    const pdf = await pdfjsLib.getDocument({
+      data: buffer,
+      useSystemFonts: true
+    }).promise;
+    
+    let fullText = '';
+    
+    // Extract text from each page
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      fullText += pageText + '\n\n';
     }
-
-    // Now try PDF parsing
-    const pdfParse = (await import('pdf-parse')).default;
-    const data = await pdfParse(buffer);
 
     return Response.json({
       success: true,
-      content: data.text,
+      content: fullText.trim(),
       metadata: {
         filename: file.name,
-        pages: data.numpages,
+        pages: pdf.numPages,
         uploadedAt: new Date().toISOString(),
         isDefault: false
       }
