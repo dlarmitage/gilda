@@ -18,39 +18,23 @@ export default function PDFUpload({ onPdfUpload }) {
     setIsUploading(true);
 
     try {
-      // Try client-side PDF parsing first
-      const pdfText = await extractTextFromPDF(file);
-      
-      if (pdfText) {
-        // Successfully extracted text client-side
-        onPdfUpload({
-          success: true,
-          content: pdfText,
-          metadata: {
-            filename: file.name,
-            pages: 'Extracted client-side',
-            uploadedAt: new Date().toISOString(),
-            isDefault: false
-          }
-        });
-      } else {
-        // Fallback to server-side processing
-        const formData = new FormData();
-        formData.append('pdf', file);
+      // For now, let's use a simple approach - just upload to server
+      // and let the server handle the parsing with better error messages
+      const formData = new FormData();
+      formData.append('pdf', file);
 
-        const response = await fetch('/api/upload-pdf', {
-          method: 'POST',
-          body: formData,
-        });
+      const response = await fetch('/api/upload-pdf', {
+        method: 'POST',
+        body: formData,
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to upload PDF');
-        }
-
-        onPdfUpload(data);
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload PDF');
       }
+
+      onPdfUpload(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -58,34 +42,6 @@ export default function PDFUpload({ onPdfUpload }) {
     }
   };
 
-  // Client-side PDF text extraction using PDF.js
-  const extractTextFromPDF = async (file) => {
-    try {
-      // Load PDF.js dynamically
-      const pdfjsLib = await import('pdfjs-dist');
-      
-      // Set up PDF.js worker
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-      
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-      
-      let fullText = '';
-      
-      // Extract text from each page
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(' ');
-        fullText += pageText + '\n\n';
-      }
-      
-      return fullText.trim();
-    } catch (error) {
-      console.log('Client-side PDF parsing failed, will try server-side:', error);
-      return null;
-    }
-  };
 
   const handleDrop = (e) => {
     e.preventDefault();
