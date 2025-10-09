@@ -28,8 +28,7 @@ export async function POST(request) {
     // Extract text from PDF with options to avoid test file issues
     const data = await pdfParse(buffer, {
       // Prevent pdf-parse from looking for test files
-      max: 0,
-      version: 'v1.10.100'
+      max: 0
     });
 
     return Response.json({

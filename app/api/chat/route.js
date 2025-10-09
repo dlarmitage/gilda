@@ -29,8 +29,7 @@ export async function POST(request) {
         const pdfParse = (await import('pdf-parse')).default;
         const data = await pdfParse(pdfBuffer, {
           // Prevent pdf-parse from looking for test files
-          max: 0,
-          version: 'v1.10.100'
+          max: 0
         });
         handbookContent = data.text;
       } else {
