@@ -6,37 +6,43 @@ import ChatInterface from './components/ChatInterface';
 import PDFUpload from './components/PDFUpload';
 import './App.css';
 
-// PDF extraction function (moved from PDFUpload component)
+// PDF extraction function (using proper PDF.js setup)
 const extractTextFromPDF = async (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const arrayBuffer = e.target.result;
-        const pdfjsLib = window.pdfjsLib;
-        
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let fullText = '';
-        
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const page = await pdf.getPage(pageNum);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => item.str).join(' ');
-          
-          if (pageText) {
-            fullText += pageText + '\n\n';
-          }
-        }
-        
-        resolve(fullText.trim());
-      } catch (error) {
-        console.error('PDF.js extraction error:', error);
-        reject(new Error(`PDF processing failed: ${error.message}`));
+  try {
+    // Load PDF.js dynamically following the official documentation
+    const pdfjsLib = await import('pdfjs-dist');
+    
+    // Configure the worker to use a local copy to avoid CORS issues
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+    
+    // Convert file to ArrayBuffer as required by PDF.js
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Load the PDF document following the Hello World example
+    const pdf = await pdfjsLib.getDocument({
+      data: arrayBuffer,
+      // Use system fonts to avoid font loading issues
+      useSystemFonts: true
+    }).promise;
+    
+    let fullText = '';
+    
+    // Extract text from all pages
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      
+      if (pageText) {
+        fullText += pageText + '\n\n';
       }
-    };
-    reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsArrayBuffer(file);
-  });
+    }
+    
+    return fullText.trim();
+  } catch (error) {
+    console.error('PDF.js extraction error:', error);
+    throw new Error(`PDF processing failed: ${error.message}`);
+  }
 };
 
 export default function App() {
