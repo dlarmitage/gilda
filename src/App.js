@@ -103,13 +103,20 @@ export default function App() {
           if (data.documents && data.documents.length > 0) {
             console.log('Found existing documents for user:', data.documents.length);
             console.log('Documents:', data.documents);
+            console.log('First document content check:', data.documents[0]?.content ? 'has content' : 'no content');
+            console.log('First document keys:', Object.keys(data.documents[0] || {}));
+            
             setDocuments(data.documents);
             
             // Combine existing documents for chat
-            const combinedContent = data.documents
-              .filter(doc => doc.content) // Only include documents with content
+            const documentsWithContent = data.documents.filter(doc => doc.content && doc.content.trim().length > 0);
+            console.log('Documents with content:', documentsWithContent.length);
+            
+            const combinedContent = documentsWithContent
               .map(doc => `=== ${doc.filename} ===\n\n${doc.content}\n\n`)
               .join('');
+            
+            console.log('Combined content length:', combinedContent.length);
             
             if (combinedContent) {
               setPdfContent(combinedContent);
@@ -153,6 +160,13 @@ export default function App() {
           // Files are raw File objects, need to process them
           const processedFiles = await Promise.all(
             uploadData.files.map(async (file) => {
+              // Check for duplicate filenames
+              const existingDoc = documents.find(doc => doc.filename === file.name);
+              if (existingDoc) {
+                console.warn(`Document "${file.name}" already exists. Skipping duplicate.`);
+                return null;
+              }
+              
               const pdfText = await extractTextFromPDF(file);
               return {
                 id: Date.now() + Math.random(),
@@ -163,7 +177,10 @@ export default function App() {
               };
             })
           );
-          allDocuments = [...documents, ...processedFiles];
+          
+          // Filter out null values (duplicates)
+          const validProcessedFiles = processedFiles.filter(file => file !== null);
+          allDocuments = [...documents, ...validProcessedFiles];
         } else {
           // Files are already processed objects
           const newDocuments = uploadData.files.map(file => ({
@@ -194,27 +211,42 @@ export default function App() {
         console.log('Documents to save:', allDocuments);
         console.log('User ID:', userId);
         
-        const response = await fetch('/api/documents', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId,
-            documents: allDocuments
-          })
+        // Validate that all documents have content before saving
+        const validDocuments = allDocuments.filter(doc => {
+          const hasContent = doc.content && doc.content.trim().length > 0;
+          if (!hasContent) {
+            console.warn('Skipping document without content:', doc.filename);
+          }
+          return hasContent;
         });
         
-        console.log('Save response status:', response.status);
-        console.log('Save response ok:', response.ok);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Failed to save documents to database:', response.statusText);
-          console.error('Error response:', errorText);
+        if (validDocuments.length === 0) {
+          console.error('No documents with valid content to save');
         } else {
-          const saveData = await response.json();
-          console.log('Documents saved to database successfully:', saveData);
+          console.log('Valid documents to save:', validDocuments.length);
+          
+          const response = await fetch('/api/documents', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId,
+              documents: validDocuments
+            })
+          });
+          
+          console.log('Save response status:', response.status);
+          console.log('Save response ok:', response.ok);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to save documents to database:', response.statusText);
+            console.error('Error response:', errorText);
+          } else {
+            const saveData = await response.json();
+            console.log('Documents saved to database successfully:', saveData);
+          }
         }
       }
       
