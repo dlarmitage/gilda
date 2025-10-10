@@ -163,7 +163,7 @@ export default function App() {
       });
       
       setPdfLoaded(true);
-      setShowUpload(false);
+      setShowUpload(false); // Close modal after upload
       console.log('PDFs uploaded successfully');
     } catch (error) {
       console.error('Error processing PDF:', error);
@@ -236,19 +236,7 @@ export default function App() {
     );
   }
 
-  if (!pdfLoaded || showUpload) {
-    return (
-      <div className="app-container">
-        {showUpload && pdfLoaded && (
-          <button className="back-button" onClick={handleBackToChat}>
-            ← Back to Chat
-          </button>
-        )}
-        <PDFUpload onPdfUpload={handlePdfUpload} />
-      </div>
-    );
-  }
-
+  // Always show chat interface, with upload as modal if needed
   return (
     <div className="app-container">
       <ChatInterface
@@ -259,6 +247,23 @@ export default function App() {
         onRemoveDocument={handleRemoveDocument}
         user={user}
       />
+      
+      {/* Upload Modal */}
+      {showUpload && (
+        <div className="upload-modal-overlay">
+          <div className="upload-modal">
+            <div className="upload-modal-header">
+              <h2>Upload Documents</h2>
+              <button className="close-btn" onClick={() => setShowUpload(false)}>
+                ×
+              </button>
+            </div>
+            <div className="upload-modal-content">
+              <PDFUpload onPdfUpload={handlePdfUpload} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

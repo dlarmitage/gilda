@@ -2,7 +2,7 @@
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   name VARCHAR(255),
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- PDF Uploads table
 CREATE TABLE IF NOT EXISTS pdf_uploads (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   filename VARCHAR(255) NOT NULL,
   original_filename VARCHAR(255) NOT NULL,
   content_text TEXT NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS pdf_uploads (
 -- Chat History table (optional - for storing conversation history)
 CREATE TABLE IF NOT EXISTS chat_history (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   pdf_upload_id INTEGER REFERENCES pdf_uploads(id) ON DELETE SET NULL,
   role VARCHAR(50) NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
   content TEXT NOT NULL,
