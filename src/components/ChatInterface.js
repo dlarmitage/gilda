@@ -207,7 +207,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
           <div className="welcome-screen">
             <div className="welcome-icon">👋</div>
             <h2>Welcome to Gilda!</h2>
-            <p>I'm your virtual assistant. Ask me anything about your uploaded document.</p>
+            <p>I'm your virtual assistant. Ask me anything about your uploaded document. I'm multilingual, so feel free to ask your questions in virtually any language.</p>
           </div>
         )}
 

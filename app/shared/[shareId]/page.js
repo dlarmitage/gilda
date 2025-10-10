@@ -45,7 +45,7 @@ export default function SharedGildaPage() {
         setDocuments(data.documents || []);
         setMessages([{
           role: 'assistant',
-          content: `👋 Hello! I'm Gilda, your AI assistant. I have access to your company's policy documents and I'm here to help answer any questions you might have. What would you like to know?`
+          content: `👋 Hello! I'm Gilda, your AI assistant. I have access to your company's policy documents and I'm here to help answer any questions you might have. I'm multilingual, so feel free to ask your questions in virtually any language. What would you like to know?`
         }]);
       } else {
         setError(data.error || 'Failed to load shared content');
