@@ -162,7 +162,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                 {documents.map((doc) => (
                   <div key={doc.id} className="document-chip">
                     <span className="document-icon">📄</span>
-                    <span className="document-name">{doc.filename}</span>
+                    <span className="document-name">{doc.filename || doc.original_filename || 'Unknown Document'}</span>
                     <button 
                       className="remove-doc-btn"
                       onClick={() => onRemoveDocument(doc.id)}

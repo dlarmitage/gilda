@@ -29,8 +29,8 @@ export default function App() {
     const defaultDoc = {
       id: 'default-sample-handbook',
       filename: 'sample_employee_handbook.pdf',
-      content: null, // Will be loaded by the API
-      size: null,
+      content: 'Default document content', // Temporary content for display
+      size: 0,
       uploadedAt: new Date().toISOString(),
       isDefault: true
     };
@@ -40,6 +40,8 @@ export default function App() {
       filename: 'sample_employee_handbook.pdf',
       isDefault: true
     });
+    setPdfLoaded(true);
+    setIsLoading(false);
   };
 
   const checkPdfStatus = async () => {
