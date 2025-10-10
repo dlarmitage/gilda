@@ -165,6 +165,13 @@
   background: #f8faff;
 }
 
+.upload-area.drag-over {
+  border-color: #667eea;
+  background: #f0f4ff;
+  border-style: solid;
+  border-width: 3px;
+}
+
 .upload-icon {
   color: #9ca3af;
   margin-bottom: 16px;

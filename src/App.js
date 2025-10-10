@@ -56,6 +56,7 @@ export default function App() {
   const [documents, setDocuments] = useState([]); // Array of individual documents
   const [isLoading, setIsLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -343,6 +344,40 @@ export default function App() {
     }
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      // Filter for PDF files only
+      const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+      if (pdfFiles.length > 0) {
+        await handlePdfUpload({ files: pdfFiles });
+      } else {
+        alert('Please drop only PDF files.');
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="loading-screen">
@@ -380,7 +415,14 @@ export default function App() {
               <p className="modal-text">
                 Upload PDF documents to get started with Gilda
               </p>
-              <div className="upload-area" onClick={() => document.getElementById('file-input').click()}>
+              <div 
+                className={`upload-area ${isDragOver ? 'drag-over' : ''}`}
+                onClick={() => document.getElementById('file-input').click()}
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
                 <div className="upload-icon">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
