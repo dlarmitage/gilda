@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getUserPDFs, createPDFUpload, getActivePDF } from '../../../lib/db';
+import { getUserPDFs, createPDFUpload, getActivePDF, getUserById, createUser } from '../../../lib/db';
 
 // GET - Retrieve user's documents
 export async function GET(request) {
@@ -66,6 +66,25 @@ export async function POST(request) {
     }
 
     console.log('POST /api/documents - Processing', documents.length, 'documents');
+
+    // Ensure user exists in database (create if doesn't exist)
+    let user = await getUserById(userId);
+    if (!user) {
+      console.log('POST /api/documents - User does not exist, creating user record');
+      try {
+        // Create user record with Neon Auth UUID as both id and email placeholder
+        user = await createUser(`${userId}@neon-auth.local`, 'neon-auth-user', 'Neon Auth User', userId);
+        console.log('POST /api/documents - User created:', user);
+      } catch (userError) {
+        console.error('POST /api/documents - Error creating user:', userError);
+        return NextResponse.json(
+          { error: 'Failed to create user record', details: userError.message },
+          { status: 500 }
+        );
+      }
+    } else {
+      console.log('POST /api/documents - User exists:', user);
+    }
 
     // Deactivate all existing PDFs for this user first
     await Promise.all(documents.map(async (doc, index) => {
