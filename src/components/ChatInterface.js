@@ -18,6 +18,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
   // Debug logging
   console.log('ChatInterface received documents:', documents);
   console.log('ChatInterface received pdfMetadata:', pdfMetadata);
+  console.log('ChatInterface received pdfContent:', !!pdfContent, 'length:', pdfContent?.length);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -98,6 +99,9 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
   };
 
   const handleShare = async () => {
+    console.log('Share button clicked - pdfContent exists:', !!pdfContent, 'length:', pdfContent?.length);
+    console.log('Documents:', documents);
+    
     if (!pdfContent) {
       alert('Please upload a PDF first before sharing');
       return;
