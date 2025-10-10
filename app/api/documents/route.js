@@ -54,23 +54,43 @@ export async function POST(request) {
   try {
     const { userId, documents } = await request.json();
 
+    console.log('POST /api/documents - userId:', userId);
+    console.log('POST /api/documents - documents:', documents);
+
     if (!userId || !documents || !Array.isArray(documents)) {
+      console.log('POST /api/documents - Missing required fields:', { userId: !!userId, documents: !!documents, isArray: Array.isArray(documents) });
       return NextResponse.json(
         { error: 'User ID and documents array are required' },
         { status: 400 }
       );
     }
 
+    console.log('POST /api/documents - Processing', documents.length, 'documents');
+
     // Deactivate all existing PDFs for this user first
-    await Promise.all(documents.map(async (doc) => {
-      await createPDFUpload(
-        userId,
-        doc.filename,
-        doc.filename,
-        doc.content,
-        doc.size || doc.content.length
-      );
+    await Promise.all(documents.map(async (doc, index) => {
+      console.log(`POST /api/documents - Processing document ${index + 1}:`, {
+        filename: doc.filename,
+        contentLength: doc.content ? doc.content.length : 0,
+        size: doc.size
+      });
+      
+      try {
+        const result = await createPDFUpload(
+          userId,
+          doc.filename,
+          doc.filename,
+          doc.content,
+          doc.size || doc.content.length
+        );
+        console.log(`POST /api/documents - Document ${index + 1} saved:`, result);
+      } catch (docError) {
+        console.error(`POST /api/documents - Error saving document ${index + 1}:`, docError);
+        throw docError;
+      }
     }));
+
+    console.log('POST /api/documents - All documents saved successfully');
 
     return NextResponse.json({
       message: 'Documents saved successfully',
@@ -78,9 +98,11 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error saving documents:', error);
+    console.error('POST /api/documents - Error saving documents:', error);
+    console.error('POST /api/documents - Error details:', error.message);
+    console.error('POST /api/documents - Error stack:', error.stack);
     return NextResponse.json(
-      { error: 'Failed to save documents' },
+      { error: 'Failed to save documents', details: error.message },
       { status: 500 }
     );
   }
