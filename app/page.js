@@ -107,7 +107,7 @@ export default function Home() {
               <div className="text-4xl mb-4">💬</div>
               <h3 className="text-xl font-semibold mb-3">Natural Conversations</h3>
               <p className="text-gray-600">
-                Ask questions in plain English and get accurate, contextual answers 
+                Ask questions in plain English (over 80 other languages!) and get accurate, contextual answers 
                 based on your document content with full conversation history.
               </p>
             </div>
