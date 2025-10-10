@@ -259,7 +259,10 @@ export default function App() {
               </button>
             </div>
             <div className="upload-modal-content">
-              <PDFUpload onPdfUpload={handlePdfUpload} />
+              <p className="modal-description">
+                Upload one or more PDF documents to get started with Gilda. You can upload multiple company policy documents, handbooks, or manuals at once.
+              </p>
+              <PDFUpload onPdfUpload={handlePdfUpload} hideTitle={true} />
             </div>
           </div>
         </div>

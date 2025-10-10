@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './PDFUpload.css';
 
-export default function PDFUpload({ onPdfUpload }) {
+export default function PDFUpload({ onPdfUpload, hideTitle = false }) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState(null);
@@ -152,11 +152,15 @@ export default function PDFUpload({ onPdfUpload }) {
   return (
     <div className="pdf-upload-container">
       <div className="upload-card">
-        <h2>Upload Documents</h2>
-        <p className="upload-description">
-          Upload one or more PDF documents to get started with Gilda, your virtual assistant. 
-          You can upload multiple company policy documents, handbooks, or manuals at once.
-        </p>
+        {!hideTitle && (
+          <>
+            <h2>Upload Documents</h2>
+            <p className="upload-description">
+              Upload one or more PDF documents to get started with Gilda, your virtual assistant. 
+              You can upload multiple company policy documents, handbooks, or manuals at once.
+            </p>
+          </>
+        )}
 
         <div
           className={`drop-zone ${isDragging ? 'dragging' : ''} ${isUploading ? 'uploading' : ''}`}

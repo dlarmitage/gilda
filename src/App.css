@@ -81,13 +81,14 @@
 
 .upload-modal {
   background: white;
-  border-radius: 16px;
-  max-width: 600px;
+  border-radius: 20px;
+  max-width: 500px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
   animation: modalSlideIn 0.3s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 @keyframes modalSlideIn {
@@ -105,16 +106,17 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 24px 0 24px;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 24px;
+  padding: 28px 28px 0 28px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 0;
 }
 
 .upload-modal-header h2 {
   margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: -0.025em;
 }
 
 .close-btn {
@@ -139,17 +141,26 @@
 }
 
 .upload-modal-content {
-  padding: 0 24px 24px 24px;
+  padding: 28px;
+}
+
+.modal-description {
+  color: #6b7280;
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+  text-align: center;
 }
 
 @media (max-width: 768px) {
   .upload-modal {
-    margin: 10px;
+    margin: 15px;
     max-height: 95vh;
+    border-radius: 16px;
   }
   
   .upload-modal-header {
-    padding: 20px 20px 0 20px;
+    padding: 24px 24px 0 24px;
   }
   
   .upload-modal-header h2 {
@@ -157,7 +168,12 @@
   }
   
   .upload-modal-content {
-    padding: 0 20px 20px 20px;
+    padding: 24px;
+  }
+  
+  .modal-description {
+    font-size: 15px;
+    margin-bottom: 20px;
   }
 }
 
