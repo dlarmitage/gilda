@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getUserPDFs, createPDFUpload, getActivePDF, getUserById, createUser } from '../../../lib/db';
+import { getUserPDFs, createPDFUpload, getActivePDF, getUserById, createUser, query } from '../../../lib/db';
 
 // GET - Retrieve user's documents
 export async function GET(request) {
@@ -86,7 +86,20 @@ export async function POST(request) {
       console.log('POST /api/documents - User exists:', user);
     }
 
-    // Deactivate all existing PDFs for this user first
+    // DELETE ALL existing PDFs for this user first to prevent duplicates
+    console.log('POST /api/documents - Deleting all existing PDFs for user to prevent duplicates');
+    try {
+      await query`
+        DELETE FROM pdf_uploads 
+        WHERE user_id = ${userId}
+      `;
+      console.log('POST /api/documents - All existing PDFs deleted');
+    } catch (deleteError) {
+      console.error('POST /api/documents - Error deleting existing PDFs:', deleteError);
+      // Continue anyway - we'll try to insert new ones
+    }
+
+    // Insert new documents
     await Promise.all(documents.map(async (doc, index) => {
       console.log(`POST /api/documents - Processing document ${index + 1}:`, {
         filename: doc.filename,
