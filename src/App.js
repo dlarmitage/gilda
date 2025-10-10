@@ -16,10 +16,13 @@ export default function App() {
   const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
-    checkPdfStatus();
-    // Load default PDF document
-    loadDefaultDocument();
-  }, []);
+    if (user) {
+      checkPdfStatus();
+    } else {
+      // Load default document for non-authenticated users
+      loadDefaultDocument();
+    }
+  }, [user]);
 
   const loadDefaultDocument = () => {
     // Add the default sample employee handbook to documents
@@ -43,15 +46,19 @@ export default function App() {
     try {
       // Check for existing documents in database for this user
       const userId = user?.id;
+      console.log('Checking PDF status for user ID:', userId);
       
       if (userId) {
         const response = await fetch(`/api/documents?userId=${userId}`);
+        console.log('Database response status:', response.status);
         
         if (response.ok) {
           const data = await response.json();
+          console.log('Database response data:', data);
           
           if (data.documents && data.documents.length > 0) {
             console.log('Found existing documents for user:', data.documents.length);
+            console.log('Documents:', data.documents);
             setDocuments(data.documents);
             
             // Combine existing documents for chat
@@ -72,6 +79,7 @@ export default function App() {
               
               setPdfLoaded(true);
               setIsLoading(false);
+              console.log('Successfully loaded existing documents, going to chat interface');
               return;
             }
           }

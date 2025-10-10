@@ -15,6 +15,10 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Debug logging
+  console.log('ChatInterface received documents:', documents);
+  console.log('ChatInterface received pdfMetadata:', pdfMetadata);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
