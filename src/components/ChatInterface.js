@@ -99,10 +99,10 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
   };
 
   const handleShare = async () => {
-    console.log('Share button clicked - pdfContent exists:', !!pdfContent, 'length:', pdfContent?.length);
+    console.log('Share button clicked - documents count:', documents?.length);
     console.log('Documents:', documents);
     
-    if (!pdfContent) {
+    if (!documents || documents.length === 0) {
       alert('Please upload a PDF first before sharing');
       return;
     }
@@ -115,7 +115,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          pdfContent,
+          pdfContent, // Keep for backward compatibility
           pdfMetadata,
           documents,
           userId: user?.id
@@ -190,7 +190,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
           </div>
         </div>
         <div className="header-actions">
-          <button className="share-btn" onClick={handleShare} disabled={!pdfContent || isGeneratingLink}>
+          <button className="share-btn" onClick={handleShare} disabled={!documents || documents.length === 0 || isGeneratingLink}>
             {isGeneratingLink ? '⏳' : '🔗'} {isGeneratingLink ? 'Creating...' : 'Share'}
           </button>
           <button className="upload-new-btn" onClick={onUploadNew}>

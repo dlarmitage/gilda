@@ -298,7 +298,12 @@ export default function App() {
         });
         
         if (!response.ok) {
-          console.error('Failed to update documents in database');
+          const errorText = await response.text();
+          console.error('Failed to update documents in database:', response.statusText);
+          console.error('Error response:', errorText);
+        } else {
+          const updateData = await response.json();
+          console.log('Documents updated in database successfully:', updateData);
         }
       } catch (error) {
         console.error('Error updating documents:', error);

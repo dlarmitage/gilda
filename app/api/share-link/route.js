@@ -8,11 +8,20 @@ export async function POST(request) {
   try {
     const { pdfContent, pdfMetadata, documents, userId } = await request.json();
 
-    if (!pdfContent) {
+    if (!documents || documents.length === 0) {
       return NextResponse.json(
-        { error: 'PDF content is required to create share link' },
+        { error: 'At least one document is required to create share link' },
         { status: 400 }
       );
+    }
+    
+    // Generate combined content from documents if pdfContent is not provided
+    let combinedContent = pdfContent;
+    if (!combinedContent && documents) {
+      combinedContent = documents
+        .filter(doc => doc.content && doc.content.trim().length > 0)
+        .map(doc => `=== ${doc.filename} ===\n\n${doc.content}\n\n`)
+        .join('');
     }
 
     // Generate unique share ID
@@ -21,7 +30,7 @@ export async function POST(request) {
     // Store the shared content
     const shareData = {
       id: shareId,
-      pdfContent,
+      pdfContent: combinedContent,
       pdfMetadata,
       documents,
       userId,
