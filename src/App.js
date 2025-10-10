@@ -9,13 +9,8 @@ import './App.css';
 // PDF extraction function (using proper PDF.js setup)
 const extractTextFromPDF = async (file) => {
   try {
-    console.log('Starting PDF extraction for file:', file.name);
-    
-    // Load PDF.js dynamically following the official documentation
-    console.log('Importing pdfjs-dist...');
+    // Load PDF.js dynamically
     const pdfjsLib = await import('pdfjs-dist');
-    console.log('PDF.js imported successfully:', !!pdfjsLib);
-    console.log('PDF.js getDocument method:', typeof pdfjsLib.getDocument);
     
     if (!pdfjsLib || !pdfjsLib.getDocument) {
       throw new Error('PDF.js library failed to load properly');
@@ -23,28 +18,20 @@ const extractTextFromPDF = async (file) => {
     
     // Configure the worker to use a local copy to avoid CORS issues
     pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-    console.log('Worker source set to:', pdfjsLib.GlobalWorkerOptions.workerSrc);
     
     // Convert file to ArrayBuffer as required by PDF.js
-    console.log('Converting file to ArrayBuffer...');
     const arrayBuffer = await file.arrayBuffer();
-    console.log('ArrayBuffer created, size:', arrayBuffer.byteLength);
     
-    // Load the PDF document following the Hello World example
-    console.log('Loading PDF document...');
+    // Load the PDF document
     const pdf = await pdfjsLib.getDocument({
       data: arrayBuffer,
-      // Use system fonts to avoid font loading issues
       useSystemFonts: true
     }).promise;
-    
-    console.log('PDF loaded successfully, pages:', pdf.numPages);
     
     let fullText = '';
     
     // Extract text from all pages
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      console.log(`Extracting text from page ${pageNum}...`);
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       const pageText = textContent.items.map(item => item.str).join(' ');
@@ -54,11 +41,9 @@ const extractTextFromPDF = async (file) => {
       }
     }
     
-    console.log('PDF extraction completed, text length:', fullText.length);
     return fullText.trim();
   } catch (error) {
-    console.error('PDF.js extraction error:', error);
-    console.error('Error details:', error.message, error.stack);
+    console.error('PDF extraction error:', error);
     throw new Error(`PDF processing failed: ${error.message}`);
   }
 };
