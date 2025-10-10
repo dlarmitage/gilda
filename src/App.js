@@ -6,6 +6,39 @@ import ChatInterface from './components/ChatInterface';
 import PDFUpload from './components/PDFUpload';
 import './App.css';
 
+// PDF extraction function (moved from PDFUpload component)
+const extractTextFromPDF = async (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const arrayBuffer = e.target.result;
+        const pdfjsLib = window.pdfjsLib;
+        
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+        
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map(item => item.str).join(' ');
+          
+          if (pageText) {
+            fullText += pageText + '\n\n';
+          }
+        }
+        
+        resolve(fullText.trim());
+      } catch (error) {
+        console.error('PDF.js extraction error:', error);
+        reject(new Error(`PDF processing failed: ${error.message}`));
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsArrayBuffer(file);
+  });
+};
+
 export default function App() {
   const user = useUser();
   const [pdfLoaded, setPdfLoaded] = useState(false);
@@ -106,15 +139,33 @@ export default function App() {
       
       // If uploadData contains individual files, store them
       if (uploadData.files && uploadData.files.length > 0) {
-        const newDocuments = uploadData.files.map(file => ({
-          id: Date.now() + Math.random(), // Simple unique ID
-          filename: file.filename,
-          content: file.content,
-          size: file.size,
-          uploadedAt: file.uploadedAt || new Date().toISOString()
-        }));
-        
-        allDocuments = [...documents, ...newDocuments];
+        // Process files if they're File objects (from new modal) or already processed
+        if (uploadData.files[0] instanceof File) {
+          // Files are raw File objects, need to process them
+          const processedFiles = await Promise.all(
+            uploadData.files.map(async (file) => {
+              const pdfText = await extractTextFromPDF(file);
+              return {
+                id: Date.now() + Math.random(),
+                filename: file.name,
+                content: pdfText,
+                size: file.size,
+                uploadedAt: new Date().toISOString()
+              };
+            })
+          );
+          allDocuments = [...documents, ...processedFiles];
+        } else {
+          // Files are already processed objects
+          const newDocuments = uploadData.files.map(file => ({
+            id: Date.now() + Math.random(),
+            filename: file.filename,
+            content: file.content,
+            size: file.size,
+            uploadedAt: file.uploadedAt || new Date().toISOString()
+          }));
+          allDocuments = [...documents, ...newDocuments];
+        }
       } else {
         // Fallback for single file uploads
         const newDoc = {
@@ -227,6 +278,13 @@ export default function App() {
     setShowUpload(false);
   };
 
+  const handleFileInput = async (e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      await handlePdfUpload({ files: Array.from(files) });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="loading-screen">
@@ -250,19 +308,41 @@ export default function App() {
       
       {/* Upload Modal */}
       {showUpload && (
-        <div className="upload-modal-overlay">
-          <div className="upload-modal">
-            <div className="upload-modal-header">
+        <div className="modal-overlay" onClick={() => setShowUpload(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
               <h2>Upload Documents</h2>
               <button className="close-btn" onClick={() => setShowUpload(false)}>
-                ×
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
               </button>
             </div>
-            <div className="upload-modal-content">
-              <p className="modal-description">
-                Upload one or more PDF documents to get started with Gilda. You can upload multiple company policy documents, handbooks, or manuals at once.
+            <div className="modal-body">
+              <p className="modal-text">
+                Upload PDF documents to get started with Gilda
               </p>
-              <PDFUpload onPdfUpload={handlePdfUpload} hideTitle={true} />
+              <div className="upload-area" onClick={() => document.getElementById('file-input').click()}>
+                <div className="upload-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <polyline points="14,2 14,8 20,8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <polyline points="10,9 9,9 8,9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <h3>Drop PDFs here or click to browse</h3>
+                <p>Upload multiple PDF documents at once</p>
+                <input
+                  id="file-input"
+                  type="file"
+                  multiple
+                  accept=".pdf"
+                  style={{ display: 'none' }}
+                  onChange={handleFileInput}
+                />
+              </div>
             </div>
           </div>
         </div>

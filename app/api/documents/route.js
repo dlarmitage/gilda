@@ -7,14 +7,19 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
 
+    console.log('GET /api/documents - userId:', userId);
+
     if (!userId) {
+      console.log('GET /api/documents - No userId provided');
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
       );
     }
 
+    console.log('GET /api/documents - Calling getUserPDFs with userId:', userId);
     const documents = await getUserPDFs(userId);
+    console.log('GET /api/documents - Raw documents from DB:', documents);
     
     // Format documents for frontend
     const formattedDocuments = documents.map(doc => ({
@@ -26,15 +31,19 @@ export async function GET(request) {
       isActive: doc.is_active
     }));
 
+    console.log('GET /api/documents - Formatted documents:', formattedDocuments);
+
     return NextResponse.json({
       documents: formattedDocuments,
       activeDocument: formattedDocuments.find(doc => doc.isActive) || null
     });
 
   } catch (error) {
-    console.error('Error fetching documents:', error);
+    console.error('GET /api/documents - Error fetching documents:', error);
+    console.error('GET /api/documents - Error details:', error.message);
+    console.error('GET /api/documents - Error stack:', error.stack);
     return NextResponse.json(
-      { error: 'Failed to fetch documents' },
+      { error: 'Failed to fetch documents', details: error.message },
       { status: 500 }
     );
   }

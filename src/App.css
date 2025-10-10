@@ -64,75 +64,74 @@
   }
 }
 
-/* Upload Modal Styles */
-.upload-modal-overlay {
+/* Modern Modal Styles */
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+  animation: fadeIn 0.2s ease-out;
 }
 
-.upload-modal {
+.modal {
   background: white;
-  border-radius: 20px;
-  max-width: 500px;
+  border-radius: 16px;
+  max-width: 480px;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-  animation: modalSlideIn 0.3s ease-out;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+  overflow: hidden;
 }
 
-@keyframes modalSlideIn {
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
   from {
     opacity: 0;
-    transform: scale(0.9) translateY(-20px);
+    transform: translateY(20px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
-.upload-modal-header {
+.modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 28px 28px 0 28px;
-  border-bottom: 1px solid #f1f5f9;
-  margin-bottom: 0;
+  padding: 24px 24px 0 24px;
 }
 
-.upload-modal-header h2 {
+.modal-header h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
-  color: #1e293b;
-  letter-spacing: -0.025em;
+  color: #111827;
 }
 
 .close-btn {
   background: none;
   border: none;
-  font-size: 28px;
   color: #6b7280;
   cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  transition: all 0.2s ease;
 }
 
 .close-btn:hover {
@@ -140,40 +139,71 @@
   color: #374151;
 }
 
-.upload-modal-content {
-  padding: 28px;
+.modal-body {
+  padding: 24px;
 }
 
-.modal-description {
+.modal-text {
   color: #6b7280;
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 14px;
   margin: 0 0 24px 0;
   text-align: center;
 }
 
+.upload-area {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fafafa;
+}
+
+.upload-area:hover {
+  border-color: #667eea;
+  background: #f8faff;
+}
+
+.upload-icon {
+  color: #9ca3af;
+  margin-bottom: 16px;
+  transition: color 0.2s ease;
+}
+
+.upload-area:hover .upload-icon {
+  color: #667eea;
+}
+
+.upload-area h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.upload-area p {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
 @media (max-width: 768px) {
-  .upload-modal {
-    margin: 15px;
-    max-height: 95vh;
-    border-radius: 16px;
+  .modal {
+    margin: 20px;
+    max-width: none;
   }
   
-  .upload-modal-header {
-    padding: 24px 24px 0 24px;
+  .modal-header {
+    padding: 20px 20px 0 20px;
   }
   
-  .upload-modal-header h2 {
-    font-size: 20px;
+  .modal-body {
+    padding: 20px;
   }
   
-  .upload-modal-content {
-    padding: 24px;
-  }
-  
-  .modal-description {
-    font-size: 15px;
-    margin-bottom: 20px;
+  .upload-area {
+    padding: 40px 20px;
   }
 }
 
