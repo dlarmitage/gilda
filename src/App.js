@@ -190,6 +190,10 @@ export default function App() {
       
       // Save documents to database if user is authenticated
       if (userId && allDocuments.length > 0) {
+        console.log('Saving documents to database...');
+        console.log('Documents to save:', allDocuments);
+        console.log('User ID:', userId);
+        
         const response = await fetch('/api/documents', {
           method: 'POST',
           headers: {
@@ -201,8 +205,16 @@ export default function App() {
           })
         });
         
+        console.log('Save response status:', response.status);
+        console.log('Save response ok:', response.ok);
+        
         if (!response.ok) {
-          console.error('Failed to save documents to database');
+          const errorText = await response.text();
+          console.error('Failed to save documents to database:', response.statusText);
+          console.error('Error response:', errorText);
+        } else {
+          const saveData = await response.json();
+          console.log('Documents saved to database successfully:', saveData);
         }
       }
       
