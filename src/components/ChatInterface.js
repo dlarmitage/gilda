@@ -292,6 +292,38 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                   <li>Access expires after 30 days</li>
                 </ul>
               </div>
+              
+              <div className="embed-section">
+                <p><strong>🖼️ Embed in your website:</strong></p>
+                <div className="embed-code-container">
+                  <textarea
+                    readOnly
+                    value={`<iframe src="${shareLink}" width="100%" height="600px" frameborder="0" title="Gilda AI Assistant"></iframe>`}
+                    className="embed-code-textarea"
+                    rows="2"
+                  />
+                  <button className="copy-btn" onClick={() => {
+                    const embedCode = `<iframe src="${shareLink}" width="100%" height="600px" frameborder="0" title="Gilda AI Assistant"></iframe>`;
+                    navigator.clipboard.writeText(embedCode).then(() => {
+                      alert('Embed code copied to clipboard!');
+                    }).catch(() => {
+                      // Fallback
+                      const textArea = document.createElement('textarea');
+                      textArea.value = embedCode;
+                      document.body.appendChild(textArea);
+                      textArea.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(textArea);
+                      alert('Embed code copied to clipboard!');
+                    });
+                  }}>
+                    📋 Copy Embed Code
+                  </button>
+                </div>
+                <p className="embed-instructions">
+                  <small>Paste this code into your website to embed Gilda directly in a page.</small>
+                </p>
+              </div>
             </div>
           </div>
         </div>
