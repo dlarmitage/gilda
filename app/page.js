@@ -16,9 +16,9 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Navigation */}
-      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200 px-6 py-4">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <div className="text-3xl">🤖</div>
@@ -42,7 +42,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <main className="flex-1 px-6 py-20">
+      <main className="pt-20 px-6 py-20">
         <div className="max-w-7xl mx-auto text-center">
           <div className="mb-8">
             <div className="text-8xl mb-6">🤖</div>
@@ -168,8 +168,8 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer - Sticky to bottom */}
-      <footer className="mt-auto px-6 py-8 border-t border-gray-200 bg-white">
+      {/* Footer */}
+      <footer className="px-6 py-8 border-t border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto text-center text-gray-600">
           <p>&copy; 2024 Gilda. Your intelligent document assistant.</p>
         </div>
