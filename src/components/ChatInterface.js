@@ -191,7 +191,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
         </div>
         <div className="header-actions">
           <button className="share-btn" onClick={handleShare} disabled={!documents || documents.length === 0 || isGeneratingLink}>
-            {isGeneratingLink ? '⏳' : '🔗'} {isGeneratingLink ? 'Creating...' : 'Share'}
+            {isGeneratingLink ? '⏳' : '📤'} {isGeneratingLink ? 'Creating...' : 'Share'}
           </button>
           <button className="upload-new-btn" onClick={onUploadNew}>
             Upload New PDF
