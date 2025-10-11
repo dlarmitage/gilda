@@ -150,7 +150,7 @@ export default function SharedGildaPage() {
     return (
       <DynamicGradient brandColor={brandColor} transparency={brandTransparency}>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center bg-white bg-opacity-90 p-8 rounded-2xl shadow-2xl">
+          <div className="text-center bg-white bg-opacity-95 p-8 rounded-2xl shadow-2xl backdrop-blur-sm">
             <div className="text-6xl mb-4">🤖</div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Loading Gilda...</h1>
             <p className="text-gray-600">Please wait while we prepare your AI assistant</p>
@@ -164,7 +164,7 @@ export default function SharedGildaPage() {
     return (
       <DynamicGradient brandColor={brandColor} transparency={brandTransparency}>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center max-w-md bg-white bg-opacity-90 p-8 rounded-2xl shadow-2xl">
+          <div className="text-center max-w-md bg-white bg-opacity-95 p-8 rounded-2xl shadow-2xl backdrop-blur-sm">
             <div className="text-6xl mb-4">😞</div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Link Not Found</h1>
             <p className="text-gray-600 mb-4">{error}</p>
@@ -181,30 +181,28 @@ export default function SharedGildaPage() {
     <DynamicGradient brandColor={brandColor} transparency={brandTransparency}>
       <div className="min-h-screen flex flex-col">
         {/* Header */}
-        <div className="bg-white bg-opacity-15 backdrop-blur-md text-white p-4 shadow-lg border-b border-white border-opacity-20">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="text-2xl">🤖</div>
-            <div>
-              <h1 className="text-xl font-bold">Gilda</h1>
-              <p className="text-sm opacity-90">Your AI Policy Assistant</p>
+        <div className="bg-white bg-opacity-15 backdrop-blur-md p-5 shadow-lg border-b border-black border-opacity-10">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-4xl">🤖</span>
+              <h1 className="text-3xl font-extrabold text-gray-900" style={{ letterSpacing: '-0.5px' }}>Gilda</h1>
+            </div>
+            <div className="flex items-center">
+              {documents && documents.length > 0 ? (
+                <div className="flex flex-wrap gap-2 items-center">
+                  {documents.map((doc, index) => (
+                    <div key={index} className="inline-flex items-center gap-2 bg-white px-3 py-2 rounded-full text-sm font-medium text-gray-800 border border-gray-200 shadow-sm">
+                      <span>📄</span>
+                      <span>{doc.filename}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-gray-800 text-sm">{`📄 ${pdfMetadata?.filename || 'Company Documents'}`}</span>
+              )}
             </div>
           </div>
-          <div className="text-sm opacity-90">
-            {documents && documents.length > 0 ? (
-              <div className="flex flex-wrap gap-2 items-center">
-                {documents.map((doc, index) => (
-                  <span key={index} className="bg-white bg-opacity-20 px-2 py-1 rounded-full text-xs">
-                    📄 {doc.filename}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              `📄 ${pdfMetadata?.filename || 'Company Documents'}`
-            )}
-          </div>
         </div>
-      </div>
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4">
