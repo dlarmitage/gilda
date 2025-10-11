@@ -181,7 +181,7 @@ export default function SharedGildaPage() {
     <DynamicGradient brandColor={brandColor} transparency={brandTransparency}>
       <div className="min-h-screen flex flex-col">
         {/* Header */}
-        <div className="bg-white bg-opacity-15 backdrop-blur-md p-5 shadow-lg border-b border-black border-opacity-10">
+        <div className="bg-white p-5 shadow-lg border-b border-gray-200">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-4xl">🤖</span>
