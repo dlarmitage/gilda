@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useParams } from 'next/navigation';
+import DynamicGradient from '../../../src/components/DynamicGradient';
 
 export default function SharedGildaPage() {
   const params = useParams();
@@ -17,6 +18,8 @@ export default function SharedGildaPage() {
   const [conversationHistory, setConversationHistory] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState(null);
+  const [brandColor, setBrandColor] = useState('#4880db');
+  const [brandTransparency, setBrandTransparency] = useState(0.5);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -34,6 +37,36 @@ export default function SharedGildaPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Function to determine if a color is light or dark
+  const isLightColor = (hexColor) => {
+    // Convert hex to RGB
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return true if light (luminance > 0.5)
+    return luminance > 0.5;
+  };
+
+  // Create gradient color (slightly darker version)
+  const getGradientEndColor = (hexColor) => {
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Make it 20% darker
+    const darkerR = Math.floor(r * 0.8);
+    const darkerG = Math.floor(g * 0.8);
+    const darkerB = Math.floor(b * 0.8);
+    
+    return `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
+  };
+
   const loadSharedData = async () => {
     try {
       const response = await fetch(`/api/share-link?shareId=${shareId}`);
@@ -43,6 +76,8 @@ export default function SharedGildaPage() {
         setPdfContent(data.pdfContent);
         setPdfMetadata(data.pdfMetadata);
         setDocuments(data.documents || []);
+        setBrandColor(data.brandColor || '#4880db');
+        setBrandTransparency(data.brandTransparency !== undefined ? data.brandTransparency : 0.5);
         setMessages([{
           role: 'assistant',
           content: `👋 Hello! I'm Gilda, your AI assistant. I have access to your company's policy documents and I'm here to help answer any questions you might have. I'm multilingual, so feel free to ask your questions in virtually any language. What would you like to know?`
@@ -113,35 +148,40 @@ export default function SharedGildaPage() {
 
   if (isLoadingData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🤖</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Loading Gilda...</h1>
-          <p className="text-gray-600">Please wait while we prepare your AI assistant</p>
+      <DynamicGradient brandColor={brandColor} transparency={brandTransparency}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center bg-white bg-opacity-90 p-8 rounded-2xl shadow-2xl">
+            <div className="text-6xl mb-4">🤖</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Loading Gilda...</h1>
+            <p className="text-gray-600">Please wait while we prepare your AI assistant</p>
+          </div>
         </div>
-      </div>
+      </DynamicGradient>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="text-6xl mb-4">😞</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Link Not Found</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <p className="text-sm text-gray-500">
-            The share link may have expired or been removed. Please contact your HR administrator for a new link.
-          </p>
+      <DynamicGradient brandColor={brandColor} transparency={brandTransparency}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center max-w-md bg-white bg-opacity-90 p-8 rounded-2xl shadow-2xl">
+            <div className="text-6xl mb-4">😞</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Link Not Found</h1>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <p className="text-sm text-gray-500">
+              The share link may have expired or been removed. Please contact your HR administrator for a new link.
+            </p>
+          </div>
         </div>
-      </div>
+      </DynamicGradient>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 shadow-lg">
+    <DynamicGradient brandColor={brandColor} transparency={brandTransparency}>
+      <div className="min-h-screen flex flex-col">
+        {/* Header */}
+        <div className="bg-white bg-opacity-15 backdrop-blur-md text-white p-4 shadow-lg border-b border-white border-opacity-20">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="text-2xl">🤖</div>
@@ -166,29 +206,40 @@ export default function SharedGildaPage() {
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-4xl mx-auto space-y-4">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="max-w-4xl mx-auto space-y-4">
+          {messages.map((message, index) => {
+            const isUser = message.role === 'user';
+            const textColor = isUser ? (isLightColor(brandColor) ? '#1f2937' : '#ffffff') : undefined;
+            const gradientEnd = isUser ? getGradientEndColor(brandColor) : undefined;
+            const messageStyle = isUser ? {
+              background: `linear-gradient(135deg, ${brandColor} 0%, ${gradientEnd} 100%)`,
+              color: textColor
+            } : {};
+
+            return (
               <div
-                className={`max-w-3xl px-4 py-3 rounded-lg ${
-                  message.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-900 border border-gray-200'
-                }`}
+                key={index}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                {message.role === 'assistant' ? (
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
-                ) : (
-                  <p>{message.content}</p>
-                )}
+                <div
+                  className={`max-w-3xl px-4 py-3 rounded-lg ${
+                    message.role === 'user'
+                      ? ''
+                      : 'bg-white text-gray-900 border border-gray-200'
+                  }`}
+                  style={messageStyle}
+                >
+                  {message.role === 'assistant' ? (
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  ) : (
+                    <p>{message.content}</p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           
           {isLoading && (
             <div className="flex justify-start">
@@ -202,12 +253,12 @@ export default function SharedGildaPage() {
             </div>
           )}
           
-          <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} />
+          </div>
         </div>
-      </div>
 
-      {/* Input */}
-      <div className="border-t bg-white p-4">
+        {/* Input */}
+        <div className="border-t bg-white bg-opacity-90 backdrop-blur-md p-4">
         <div className="max-w-4xl mx-auto flex space-x-3">
           <textarea
             ref={inputRef}
@@ -227,7 +278,8 @@ export default function SharedGildaPage() {
             Send
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </DynamicGradient>
   );
 }

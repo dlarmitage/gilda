@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4880db 0%, #3b6bb3 100%);
   color: white;
 }
 
@@ -39,7 +39,7 @@
   top: 20px;
   left: 20px;
   background: white;
-  color: #667eea;
+  color: #4880db;
   border: none;
   padding: 12px 24px;
   border-radius: 8px;
@@ -71,8 +71,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -161,12 +161,12 @@
 }
 
 .upload-area:hover {
-  border-color: #667eea;
+  border-color: #4880db;
   background: #f8faff;
 }
 
 .upload-area.drag-over {
-  border-color: #667eea;
+  border-color: #4880db;
   background: #f0f4ff;
   border-style: solid;
   border-width: 3px;
@@ -179,7 +179,7 @@
 }
 
 .upload-area:hover .upload-icon {
-  color: #667eea;
+  color: #4880db;
 }
 
 .upload-area h3 {

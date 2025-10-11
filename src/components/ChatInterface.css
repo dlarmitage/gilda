@@ -2,22 +2,36 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #f5f5f7;
+  background: transparent;
 }
 
 .chat-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  color: #1f2937;
   padding: 20px 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .header-content h1 {
   margin: 0 0 5px 0;
-  font-size: 24px;
+  font-size: 32px;
+  color: #111827;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gilda-icon {
+  font-size: 36px;
+  display: inline-block;
+  line-height: 1;
 }
 
 .documents-container {
@@ -48,16 +62,20 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 6px 12px;
+  background: white;
+  padding: 8px 14px;
   border-radius: 16px;
   transition: all 0.2s ease;
   max-width: 300px;
   min-width: fit-content;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .document-chip:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #f9fafb;
+  border-color: #d1d5db;
 }
 
 .document-icon {
@@ -72,14 +90,15 @@
   text-overflow: initial;
   max-width: none;
   flex: 1;
+  color: #1f2937;
 }
 
 .remove-doc-btn {
-  background: rgba(255, 255, 255, 0.3);
+  background: #f3f4f6;
   border: none;
-  color: white;
-  width: 18px;
-  height: 18px;
+  color: #6b7280;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   cursor: pointer;
   font-size: 14px;
@@ -92,7 +111,8 @@
 }
 
 .remove-doc-btn:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: #e5e7eb;
+  color: #374151;
   transform: scale(1.1);
 }
 
@@ -113,18 +133,20 @@
 
 .upload-new-btn {
   background: white;
-  color: #667eea;
-  border: none;
+  color: #374151;
+  border: 1px solid #d1d5db;
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .upload-new-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .header-actions {
@@ -134,44 +156,49 @@
 }
 
 .signout-btn {
-  background: transparent;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
   padding: 10px 20px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .signout-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .share-btn {
-  background: #10b981;
-  color: white;
-  border: none;
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
   padding: 10px 20px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .share-btn:hover:not(:disabled) {
-  background: #059669;
-  transform: translateY(-1px);
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .share-btn:disabled {
-  background: #6b7280;
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
   cursor: not-allowed;
-  transform: none;
 }
 
 .chat-messages {
@@ -181,6 +208,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  background: transparent;
 }
 
 .welcome-screen {
@@ -226,14 +254,14 @@
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #667eea;
+  color: #4880db;
   font-weight: 500;
 }
 
 .example-question:hover {
-  border-color: #667eea;
+  border-color: #4880db;
   transform: translateX(5px);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 2px 8px rgba(72, 128, 219, 0.2);
 }
 
 .message {
@@ -303,7 +331,7 @@
 
 .message.assistant .message-content strong {
   font-weight: 600;
-  color: #667eea;
+  color: #4880db;
 }
 
 .message.assistant .message-content code {
@@ -323,7 +351,7 @@
 }
 
 .message.assistant .message-content blockquote {
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #4880db;
   padding-left: 15px;
   margin: 10px 0;
   color: #666;
@@ -331,8 +359,7 @@
 }
 
 .message.user .message-content {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  /* Background and color are set dynamically via inline styles based on brand color */
   border-bottom-right-radius: 4px;
 }
 
@@ -353,7 +380,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #667eea;
+  background: #4880db;
   animation: typing 1.4s infinite;
 }
 
@@ -398,7 +425,7 @@
 
 .chat-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #4880db;
 }
 
 .chat-input:disabled {
@@ -407,24 +434,30 @@
 }
 
 .send-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
   width: 50px;
   height: 50px;
   border-radius: 50%;
   font-size: 20px;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
   flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .send-button:hover:not(:disabled) {
-  transform: scale(1.1);
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
 }
 
 .send-button:disabled {
-  opacity: 0.5;
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
   cursor: not-allowed;
 }
 
@@ -436,7 +469,7 @@
   }
 
   .header-content h1 {
-    font-size: 20px;
+    font-size: 28px;
   }
 
   .pdf-info {
@@ -471,7 +504,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -549,25 +582,27 @@
 
 .share-link-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #4880db;
+  box-shadow: 0 0 0 3px rgba(72, 128, 219, 0.1);
 }
 
 .copy-btn {
-  background: #667eea;
-  color: white;
-  border: none;
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
   padding: 12px 20px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s ease;
   white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .copy-btn:hover {
-  background: #5a67d8;
-  transform: translateY(-1px);
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .share-info {
@@ -628,14 +663,156 @@
 
 .embed-code-textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #4880db;
+  box-shadow: 0 0 0 3px rgba(72, 128, 219, 0.1);
 }
 
 .embed-instructions {
   color: #9ca3af !important;
   font-size: 12px !important;
-  margin: 0 !important;
+  margin: 8px 0 32px 0 !important;
   font-style: italic;
+  text-align: center;
 }
+
+/* Brand Color Picker Styles */
+.brand-color-section {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border: 1px solid #e5e7eb;
+}
+
+.brand-color-section p {
+  margin: 0 0 12px 0;
+  color: #111827;
+  font-size: 14px;
+}
+
+.brand-color-section strong {
+  font-weight: 600;
+}
+
+.color-picker-description {
+  color: #6b7280 !important;
+  font-size: 13px !important;
+  margin-bottom: 16px !important;
+}
+
+.color-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.color-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.color-picker-input {
+  width: 60px;
+  height: 40px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.color-picker-input:hover {
+  border-color: #4880db;
+}
+
+.color-value {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+
+/* Transparency Slider Styles */
+.transparency-slider-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.slider-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.transparency-slider {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, 
+    rgba(102, 126, 234, 0.2), 
+    rgba(102, 126, 234, 1));
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.transparency-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4880db;
+  cursor: pointer;
+  border: 3px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.transparency-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.transparency-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4880db;
+  cursor: pointer;
+  border: 3px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.transparency-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Removed - no longer displaying opacity percentage */
+/* .transparency-value {
+  text-align: center;
+  font-size: 14px;
+  color: #374151;
+  font-weight: 600;
+  padding: 4px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+} */
 

@@ -3,7 +3,7 @@ import { useUser } from "@stackframe/stack";
 import ReactMarkdown from 'react-markdown';
 import './ChatInterface.css';
 
-export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUploadNew, onRemoveDocument, user }) {
+export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUploadNew, onRemoveDocument, user, brandColor = '#4880db', brandTransparency = 0.5, onBrandColorChange, onBrandTransparencyChange }) {
   const { signOut } = useUser();
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -12,6 +12,8 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [selectedBrandColor, setSelectedBrandColor] = useState(brandColor);
+  const [selectedTransparency, setSelectedTransparency] = useState(brandTransparency);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -27,6 +29,36 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Function to determine if a color is light or dark
+  const isLightColor = (hexColor) => {
+    // Convert hex to RGB
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return true if light (luminance > 0.5)
+    return luminance > 0.5;
+  };
+
+  // Create gradient color (slightly darker version)
+  const getGradientEndColor = (hexColor) => {
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Make it 20% darker
+    const darkerR = Math.floor(r * 0.8);
+    const darkerG = Math.floor(g * 0.8);
+    const darkerB = Math.floor(b * 0.8);
+    
+    return `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
+  };
 
   const exampleQuestions = [];
 
@@ -107,6 +139,8 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
       return;
     }
 
+    setSelectedBrandColor(brandColor); // Set current brand color when opening modal
+    setSelectedTransparency(brandTransparency); // Set current transparency when opening modal
     setIsGeneratingLink(true);
     try {
       const response = await fetch('/api/share-link', {
@@ -118,7 +152,9 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
           pdfContent, // Keep for backward compatibility
           pdfMetadata,
           documents,
-          userId: user?.id
+          userId: user?.id,
+          brandColor: brandColor,
+          brandTransparency: brandTransparency
         })
       });
 
@@ -135,6 +171,108 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
       alert('Failed to create share link. Please try again.');
     } finally {
       setIsGeneratingLink(false);
+    }
+  };
+
+  const handleBrandColorChange = async (newColor) => {
+    setSelectedBrandColor(newColor);
+    
+    // Save to database
+    if (user?.id) {
+      try {
+        const response = await fetch('/api/brand-color', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            brandColor: newColor,
+            brandTransparency: selectedTransparency
+          })
+        });
+
+        if (response.ok) {
+          // Update parent component
+          if (onBrandColorChange) {
+            onBrandColorChange(newColor);
+          }
+          
+          // Regenerate share link with new brand color
+          const shareResponse = await fetch('/api/share-link', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              pdfContent,
+              pdfMetadata,
+              documents,
+              userId: user.id,
+              brandColor: newColor,
+              brandTransparency: selectedTransparency
+            })
+          });
+
+          const shareData = await shareResponse.json();
+          if (shareResponse.ok) {
+            setShareLink(shareData.shareUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Error updating brand color:', error);
+      }
+    }
+  };
+
+  const handleTransparencyChange = async (newTransparency) => {
+    setSelectedTransparency(newTransparency);
+    
+    // Save to database
+    if (user?.id) {
+      try {
+        const response = await fetch('/api/brand-color', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            brandColor: selectedBrandColor,
+            brandTransparency: newTransparency
+          })
+        });
+
+        if (response.ok) {
+          // Update parent component
+          if (onBrandTransparencyChange) {
+            onBrandTransparencyChange(newTransparency);
+          }
+          
+          // Regenerate share link with new transparency
+          const shareResponse = await fetch('/api/share-link', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              pdfContent,
+              pdfMetadata,
+              documents,
+              userId: user.id,
+              brandColor: selectedBrandColor,
+              brandTransparency: newTransparency
+            })
+          });
+
+          const shareData = await shareResponse.json();
+          if (shareResponse.ok) {
+            setShareLink(shareData.shareUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Error updating transparency:', error);
+      }
     }
   };
 
@@ -159,7 +297,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
     <div className="chat-container">
       <div className="chat-header">
         <div className="header-content">
-          <h1>🤖 Gilda</h1>
+          <h1><span className="gilda-icon">🤖</span> Gilda</h1>
           <div className="documents-container">
             {documents && documents.length > 0 ? (
               <div className="document-chips">
@@ -211,20 +349,30 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
           </div>
         )}
 
-        {messages.map((msg, index) => (
-          <div key={index} className={`message ${msg.role}`}>
-            <div className="message-avatar">
-              {msg.role === 'user' ? '👤' : '🤖'}
+        {messages.map((msg, index) => {
+          const isUser = msg.role === 'user';
+          const textColor = isUser ? (isLightColor(brandColor) ? '#1f2937' : '#ffffff') : undefined;
+          const gradientEnd = isUser ? getGradientEndColor(brandColor) : undefined;
+          const messageStyle = isUser ? {
+            background: `linear-gradient(135deg, ${brandColor} 0%, ${gradientEnd} 100%)`,
+            color: textColor
+          } : {};
+
+          return (
+            <div key={index} className={`message ${msg.role}`}>
+              <div className="message-avatar">
+                {msg.role === 'user' ? '👤' : '🤖'}
+              </div>
+              <div className="message-content" style={messageStyle}>
+                {msg.role === 'assistant' ? (
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                ) : (
+                  msg.content
+                )}
+              </div>
             </div>
-            <div className="message-content">
-              {msg.role === 'assistant' ? (
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
-              ) : (
-                msg.content
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
 
         {isLoading && (
           <div className="message assistant">
@@ -272,6 +420,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
             </div>
             <div className="share-modal-content">
               <p>Share this link with your team so they can ask questions about the company policies without needing to log in.</p>
+              
               <div className="share-link-container">
                 <input
                   type="text"
@@ -323,6 +472,42 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                 <p className="embed-instructions">
                   <small>Paste this code into your website to embed Gilda directly in a page.</small>
                 </p>
+              </div>
+
+              {/* Brand Color Picker with Gradient Intensity */}
+              <div className="brand-color-section">
+                <p><strong>🎨 Brand Color & Intensity</strong></p>
+                <p className="color-picker-description">Choose a color that represents your brand and adjust the gradient intensity.</p>
+                
+                {/* Color Picker and Slider in one row */}
+                <div className="color-picker-row">
+                  <div className="color-picker-container">
+                    <input
+                      type="color"
+                      value={selectedBrandColor}
+                      onChange={(e) => handleBrandColorChange(e.target.value)}
+                      className="color-picker-input"
+                    />
+                    <span className="color-value">{selectedBrandColor}</span>
+                  </div>
+
+                  {/* Transparency Slider */}
+                  <div className="transparency-slider-container">
+                    <div className="slider-labels">
+                      <span className="slider-label">Subtle</span>
+                      <span className="slider-label">Bold</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="1"
+                      step="0.05"
+                      value={selectedTransparency}
+                      onChange={(e) => handleTransparencyChange(parseFloat(e.target.value))}
+                      className="transparency-slider"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

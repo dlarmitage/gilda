@@ -6,7 +6,7 @@ const shareLinks = new Map();
 
 export async function POST(request) {
   try {
-    const { pdfContent, pdfMetadata, documents, userId } = await request.json();
+    const { pdfContent, pdfMetadata, documents, userId, brandColor, brandTransparency } = await request.json();
 
     if (!documents || documents.length === 0) {
       return NextResponse.json(
@@ -34,6 +34,8 @@ export async function POST(request) {
       pdfMetadata,
       documents,
       userId,
+      brandColor: brandColor || '#4880db',
+      brandTransparency: brandTransparency !== undefined ? parseFloat(brandTransparency) : 0.5,
       createdAt: new Date().toISOString(),
       accessCount: 0,
       lastAccessed: null
@@ -89,6 +91,8 @@ export async function GET(request) {
       pdfContent: shareData.pdfContent,
       pdfMetadata: shareData.pdfMetadata,
       documents: shareData.documents,
+      brandColor: shareData.brandColor || '#4880db',
+      brandTransparency: shareData.brandTransparency !== undefined ? shareData.brandTransparency : 0.5,
       createdAt: shareData.createdAt,
       accessCount: shareData.accessCount
     });

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from "@stackframe/stack";
 import ChatInterface from './components/ChatInterface';
 import PDFUpload from './components/PDFUpload';
+import DynamicGradient from './components/DynamicGradient';
 import './App.css';
 
 // PDF extraction function (using proper PDF.js setup)
@@ -57,15 +58,37 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [brandColor, setBrandColor] = useState('#4880db');
+  const [brandTransparency, setBrandTransparency] = useState(0.5);
 
   useEffect(() => {
     if (user) {
       checkPdfStatus();
+      loadUserBrandColor();
     } else {
       // Load default document for non-authenticated users
       loadDefaultDocument();
     }
   }, [user]);
+
+  const loadUserBrandColor = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const response = await fetch(`/api/brand-color?userId=${user.id}`);
+      const data = await response.json();
+      if (response.ok) {
+        if (data.brandColor) {
+          setBrandColor(data.brandColor);
+        }
+        if (data.brandTransparency !== undefined) {
+          setBrandTransparency(data.brandTransparency);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading brand settings:', error);
+    }
+  };
 
   const loadDefaultDocument = () => {
     // Add the default sample employee handbook to documents
@@ -389,15 +412,24 @@ export default function App() {
 
   // Always show chat interface, with upload as modal if needed
   return (
-    <div className="app-container">
-      <ChatInterface
-        pdfContent={pdfContent}
-        pdfMetadata={pdfMetadata}
-        documents={documents}
-        onUploadNew={handleUploadNew}
-        onRemoveDocument={handleRemoveDocument}
-        user={user}
-      />
+    <DynamicGradient brandColor={brandColor} transparency={brandTransparency}>
+      <div className="app-container">
+        <ChatInterface
+          pdfContent={pdfContent}
+          pdfMetadata={pdfMetadata}
+          documents={documents}
+          onUploadNew={handleUploadNew}
+          onRemoveDocument={handleRemoveDocument}
+          user={user}
+          brandColor={brandColor}
+          brandTransparency={brandTransparency}
+          onBrandColorChange={(newColor) => {
+            setBrandColor(newColor);
+          }}
+          onBrandTransparencyChange={(newTransparency) => {
+            setBrandTransparency(newTransparency);
+          }}
+        />
       
       {/* Upload Modal */}
       {showUpload && (
@@ -447,7 +479,8 @@ export default function App() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </DynamicGradient>
   );
 }
 
