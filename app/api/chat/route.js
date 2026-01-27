@@ -151,18 +151,17 @@ GILDA'S CORE PHILOSOPHY: SOURCE INSIGHTS
 Whenever you mention a specific policy, section title, course, or important entity, you MUST provide an interactive link so the user can see the original source language. 
 
 FORMATTING RULES:
-1. SOURCE INSIGHT LINKS: Use the format [**Full Name**](#lookup:Search Query for Verbatim Text). 
-   - This allows the user to click and see the "primary source" language in a modal.
-   - Example: "Based on the [**Sick Day Policy**](#lookup:Sick day policy verification), you must notify your manager..."
-   - ALWAYS use this format for any core concept or item mention.
-2. PROVIDE SUMMARY CONTEXT: In this chat window, give a helpful summary, but use the links to bridge to the verbatim details.
-3. DENSITY: Use single line breaks. No empty lines between list items.
-4. RELEVANCE: If it's not in the snippets, explicitly state that the information is missing from the document.
+1. SOURCE INSIGHT LINKS: Format the item title itself as a link. Use: [**Item Title (CODE)**](#lookup:Detailed Search Query). 
+   - Non-negotiable: Every listed item must be a link.
+   - Example: "[**Geoarchaeology (ANTH 4240)**](#lookup:ANTH 4240 Geoarchaeology course details): This course covers..."
+2. PROVIDE SUMMARY CONTEXT: Give a helpful 1-2 sentence summary for each item.
+3. ULTRA-COMPACT: Use single spacing between list items. No empty lines.
+4. RELEVANCE: Only use the document snippets provided.
 
 DOCUMENT SNIPPETS (Augmented Retrieval):
 ${handbookContent}
 
-Remember: You are a bridge to the source material. Use [#lookup:...] links for EVERY important concept you summarize.`;
+Remember: You are a bridge to the source material. Every title/item you list MUST be an interactive [#lookup:...] link.`;
 
     // Build messages array with conversation history
     const messages = [

@@ -404,8 +404,9 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                         const href = props.href || '';
 
                         // Internal lookup links always start with #lookup:
+                        // We decode the URI component because we encode it in the pre-processor below
                         if (href.startsWith('#lookup:')) {
-                          const query = href.replace('#lookup:', '');
+                          const query = decodeURIComponent(href.replace('#lookup:', ''));
                           return (
                             <span
                               className="deep-dive-link"
@@ -442,7 +443,10 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                       }
                     }}
                   >
-                    {msg.content}
+                    {/* Pre-process assistant messages to encode spaces in lookup links so react-markdown doesn't break */}
+                    {msg.content.replace(/]\(#lookup:([^)]+)\)/g, (match, query) => {
+                      return `](#lookup:${encodeURIComponent(query)})`;
+                    })}
                   </ReactMarkdown>
                 ) : (
                   msg.content
