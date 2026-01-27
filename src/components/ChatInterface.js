@@ -501,7 +501,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
               </button>
             </div>
             <div className="share-modal-content">
-              <p>Share this link with your team so they can ask questions about the company policies without needing to log in.</p>
+              <p>Share this link with others so they can ask questions about your knowledge base without needing to log in.</p>
 
               <div className="share-link-container">
                 <input
@@ -517,7 +517,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
               <div className="share-info">
                 <p><strong>📋 What they can do:</strong></p>
                 <ul>
-                  <li>Ask questions about company policies</li>
+                  <li>Ask questions about your documents</li>
                   <li>Get instant answers from Gilda</li>
                   <li>No login required</li>
                   <li>Access expires after 30 days</li>

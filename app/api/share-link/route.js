@@ -65,8 +65,13 @@ export async function POST(request) {
 
     shareLinks.set(shareId, shareData);
 
+    // Determine the base URL dynamically from the request headers
+    const protocol = request.headers.get('x-forwarded-proto') || 'https';
+    const host = request.headers.get('host');
+    const baseUrl = `${protocol}://${host}`;
+
     // Return the share link
-    const shareUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/shared/${shareId}`;
+    const shareUrl = `${baseUrl}/shared/${shareId}`;
 
     return NextResponse.json({
       shareId,
