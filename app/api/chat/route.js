@@ -6,8 +6,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-import { getActivePDF, getUserPDFs, searchPDFChunks } from '../../../lib/db';
-import { shareLinks } from '../../../lib/shared-store';
+import { getActivePDF, getUserPDFs, searchPDFChunks, getShareLink } from '../../../lib/db';
 import { generateEmbeddings } from '../../../lib/embeddings';
 
 export async function POST(request) {
@@ -23,18 +22,16 @@ export async function POST(request) {
 
     let handbookContent = pdfContent;
 
-
     // NEW RAG LOGIC: Search for relevant chunks in Postgres
     let relevantChunks = [];
     if (userId || shareId) {
       console.log('Performing vector search for message:', message);
       try {
         const queryEmbedding = await generateEmbeddings(message);
-        // If it's a shared link, we might need a generic search or use a specific user's context
-        // For now, if shareId is provided, we fetch the userId from shared store
+
         let searchUserId = userId;
         if (!searchUserId && shareId) {
-          const shareData = shareLinks.get(shareId);
+          const shareData = await getShareLink(shareId);
           searchUserId = shareData?.userId;
         }
 
@@ -61,8 +58,8 @@ export async function POST(request) {
         console.log('Loaded PDF content from DB, length:', handbookContent.length);
       }
     } else if (!handbookContent && shareId) {
-      console.log('No pdfContent in request, fetching from shared store for shareId:', shareId);
-      const shareData = shareLinks.get(shareId);
+      console.log('No pdfContent in request, fetching from DB for shareId:', shareId);
+      const shareData = await getShareLink(shareId);
       if (shareData) {
         handbookContent = shareData.pdfContent;
         console.log('Loaded PDF content from shared store, length:', handbookContent?.length);

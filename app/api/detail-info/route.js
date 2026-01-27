@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { searchPDFChunks } from '../../../lib/db';
+import { searchPDFChunks, getShareLink } from '../../../lib/db';
 import { generateEmbeddings } from '../../../lib/embeddings';
 
 const openai = new OpenAI({
@@ -8,11 +8,24 @@ const openai = new OpenAI({
 
 export async function POST(request) {
     try {
-        const { searchQuery, userId } = await request.json();
+        const { searchQuery, userId, shareId } = await request.json();
 
-        if (!searchQuery || !userId) {
+        if (!searchQuery) {
             return Response.json(
-                { error: 'Search query and User ID are required' },
+                { error: 'Search query is required' },
+                { status: 400 }
+            );
+        }
+
+        let searchUserId = userId;
+        if (!searchUserId && shareId) {
+            const shareData = await getShareLink(shareId);
+            searchUserId = shareData?.userId;
+        }
+
+        if (!searchUserId) {
+            return Response.json(
+                { error: 'User ID or Share ID is required' },
                 { status: 400 }
             );
         }

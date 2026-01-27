@@ -126,7 +126,8 @@ export default function SharedGildaPage() {
         },
         body: JSON.stringify({
           searchQuery: queryText,
-          userId: userId // From shared data
+          userId: userId, // From shared data
+          shareId: shareId
         })
       });
 
