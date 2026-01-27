@@ -39,7 +39,7 @@ export async function POST(request) {
         }
 
         if (searchUserId) {
-          relevantChunks = await searchPDFChunks(searchUserId, queryEmbedding, 15);
+          relevantChunks = await searchPDFChunks(searchUserId, queryEmbedding, 20);
           console.log(`Found ${relevantChunks.length} relevant chunks via vector search`);
         }
       } catch (searchError) {
@@ -154,10 +154,10 @@ IMPORTANT RULES:
 - Be professional, friendly, and helpful
 - Keep responses concise and relevant
 
-DOCUMENT:
+DOCUMENT SNIPPETS (Augmented Retrieval):
 ${handbookContent}
 
-Remember: Only use the information from the document above to answer questions.`;
+Remember: You are viewing relevant snippets from a very large document. Use these snippets to synthesize an accurate answer. If the answer is not in the snippets, say you couldn't find it.`;
 
     // Build messages array with conversation history
     const messages = [
