@@ -37,10 +37,10 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
-    
+
     // Calculate luminance
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    
+
     // Return true if light (luminance > 0.5)
     return luminance > 0.5;
   };
@@ -51,12 +51,12 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
-    
+
     // Make it 20% darker
     const darkerR = Math.floor(r * 0.8);
     const darkerG = Math.floor(g * 0.8);
     const darkerB = Math.floor(b * 0.8);
-    
+
     return `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
   };
 
@@ -67,12 +67,12 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
 
     const userMessage = messageText.trim();
     setInputMessage('');
-    
+
     // Focus input after sending message
     setTimeout(() => {
       inputRef.current?.focus();
     }, 50);
-    
+
     // Add user message to display
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
@@ -86,7 +86,8 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
         body: JSON.stringify({
           message: userMessage,
           conversationHistory: conversationHistory,
-          pdfContent: pdfContent,
+          // Removed pdfContent to avoid 413 Payload Too Large error
+          // The server now fetches this from the DB using userId
           userId: user?.id,
         }),
       });
@@ -99,10 +100,10 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
 
       // Add assistant message to display
       setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
-      
+
       // Update conversation history
       setConversationHistory(data.conversationHistory);
-      
+
       // Focus back on input after AI responds
       setTimeout(() => {
         inputRef.current?.focus();
@@ -113,7 +114,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
         ...prev,
         { role: 'assistant', content: '❌ Sorry, I encountered an error. Please try again.' }
       ]);
-      
+
       // Focus back on input after error
       setTimeout(() => {
         inputRef.current?.focus();
@@ -133,7 +134,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
   const handleShare = async () => {
     console.log('Share button clicked - documents count:', documents?.length);
     console.log('Documents:', documents);
-    
+
     if (!documents || documents.length === 0) {
       alert('Please upload a PDF first before sharing');
       return;
@@ -149,12 +150,14 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          pdfContent, // Keep for backward compatibility
+          // Removed pdfContent and documents to avoid 413 Payload Too Large error
+          // The server can fetch these from the DB based on the userId
           pdfMetadata,
-          documents,
           userId: user?.id,
           brandColor: brandColor,
-          brandTransparency: brandTransparency
+          brandTransparency: brandTransparency,
+          // We still send filenames for metadata purposes if needed
+          documentNames: documents.map(d => d.filename)
         })
       });
 
@@ -176,7 +179,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
 
   const handleBrandColorChange = async (newColor) => {
     setSelectedBrandColor(newColor);
-    
+
     // Save to database
     if (user?.id) {
       try {
@@ -197,7 +200,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
           if (onBrandColorChange) {
             onBrandColorChange(newColor);
           }
-          
+
           // Regenerate share link with new brand color
           const shareResponse = await fetch('/api/share-link', {
             method: 'POST',
@@ -205,9 +208,6 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              pdfContent,
-              pdfMetadata,
-              documents,
               userId: user.id,
               brandColor: newColor,
               brandTransparency: selectedTransparency
@@ -227,7 +227,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
 
   const handleTransparencyChange = async (newTransparency) => {
     setSelectedTransparency(newTransparency);
-    
+
     // Save to database
     if (user?.id) {
       try {
@@ -248,7 +248,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
           if (onBrandTransparencyChange) {
             onBrandTransparencyChange(newTransparency);
           }
-          
+
           // Regenerate share link with new transparency
           const shareResponse = await fetch('/api/share-link', {
             method: 'POST',
@@ -256,9 +256,6 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              pdfContent,
-              pdfMetadata,
-              documents,
               userId: user.id,
               brandColor: selectedBrandColor,
               brandTransparency: newTransparency
@@ -305,7 +302,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                   <div key={doc.id} className="document-chip">
                     <span className="document-icon">📄</span>
                     <span className="document-name">{doc.filename || doc.original_filename || 'Unknown Document'}</span>
-                    <button 
+                    <button
                       className="remove-doc-btn"
                       onClick={() => onRemoveDocument(doc.id)}
                       title="Remove this document"
@@ -420,7 +417,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
             </div>
             <div className="share-modal-content">
               <p>Share this link with your team so they can ask questions about the company policies without needing to log in.</p>
-              
+
               <div className="share-link-container">
                 <input
                   type="text"
@@ -441,7 +438,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                   <li>Access expires after 30 days</li>
                 </ul>
               </div>
-              
+
               <div className="embed-section">
                 <p><strong>🖼️ Embed in your website:</strong></p>
                 <div className="embed-code-container">
@@ -478,7 +475,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
               <div className="brand-color-section">
                 <p><strong>🎨 Brand Color & Intensity</strong></p>
                 <p className="color-picker-description">Choose a color that represents your brand and adjust the gradient intensity.</p>
-                
+
                 {/* Color Picker and Slider in one row */}
                 <div className="color-picker-row">
                   <div className="color-picker-container">

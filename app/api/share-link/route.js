@@ -1,38 +1,60 @@
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
+import { getActivePDF, getUserPDFs } from '../../../lib/db';
 
-// In-memory storage for demo (in production, use database)
-const shareLinks = new Map();
+import { shareLinks } from '../../../lib/shared-store';
 
 export async function POST(request) {
   try {
     const { pdfContent, pdfMetadata, documents, userId, brandColor, brandTransparency } = await request.json();
 
-    if (!documents || documents.length === 0) {
+    let finalDocuments = documents;
+    let finalPdfContent = pdfContent;
+
+    // If documents are missing but userId is provided, fetch from DB
+    if ((!finalDocuments || finalDocuments.length === 0) && userId) {
+      console.log('Fetching documents from DB for share link, userId:', userId);
+      const dbDocs = await getUserPDFs(userId);
+      if (dbDocs && dbDocs.length > 0) {
+        finalDocuments = dbDocs.map(doc => ({
+          id: doc.id,
+          filename: doc.original_filename,
+          content: doc.content_text,
+          size: doc.file_size
+        }));
+      }
+    }
+
+    if (!finalDocuments || finalDocuments.length === 0) {
       return NextResponse.json(
         { error: 'At least one document is required to create share link' },
         { status: 400 }
       );
     }
-    
-    // Generate combined content from documents if pdfContent is not provided
-    let combinedContent = pdfContent;
-    if (!combinedContent && documents) {
-      combinedContent = documents
+
+    // Generate combined content from documents if finalPdfContent is not provided
+    if (!finalPdfContent && finalDocuments) {
+      finalPdfContent = finalDocuments
         .filter(doc => doc.content && doc.content.trim().length > 0)
         .map(doc => `=== ${doc.filename} ===\n\n${doc.content}\n\n`)
         .join('');
     }
 
+    // Safety: Limit stored content size (OpenAI token limits + memory safety)
+    const MAX_CHARS = 300000;
+    if (finalPdfContent && finalPdfContent.length > MAX_CHARS) {
+      finalPdfContent = finalPdfContent.substring(0, MAX_CHARS) + "\n\n[Content truncated for shared view size limits]";
+    }
+
     // Generate unique share ID
     const shareId = nanoid(12);
-    
+
     // Store the shared content
     const shareData = {
       id: shareId,
-      pdfContent: combinedContent,
+      pdfContent: finalPdfContent,
       pdfMetadata,
-      documents,
+      documents: finalDocuments,
       userId,
       brandColor: brandColor || '#4880db',
       brandTransparency: brandTransparency !== undefined ? parseFloat(brandTransparency) : 0.5,

@@ -8,7 +8,7 @@ import DynamicGradient from '../../../src/components/DynamicGradient';
 export default function SharedGildaPage() {
   const params = useParams();
   const shareId = params.shareId;
-  
+
   const [pdfContent, setPdfContent] = useState(null);
   const [pdfMetadata, setPdfMetadata] = useState(null);
   const [documents, setDocuments] = useState([]);
@@ -44,10 +44,10 @@ export default function SharedGildaPage() {
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
-    
+
     // Calculate luminance
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    
+
     // Return true if light (luminance > 0.5)
     return luminance > 0.5;
   };
@@ -58,12 +58,12 @@ export default function SharedGildaPage() {
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
-    
+
     // Make it 20% darker
     const darkerR = Math.floor(r * 0.8);
     const darkerG = Math.floor(g * 0.8);
     const darkerB = Math.floor(b * 0.8);
-    
+
     return `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
   };
 
@@ -110,7 +110,9 @@ export default function SharedGildaPage() {
         body: JSON.stringify({
           message: userMessage,
           conversationHistory: conversationHistory,
-          pdfContent: pdfContent,
+          // Removed pdfContent to avoid 413 Payload Too Large error
+          // The server now fetches this from the shared store using shareId
+          shareId: shareId,
         }),
       });
 
@@ -122,7 +124,7 @@ export default function SharedGildaPage() {
 
       setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
       setConversationHistory(prev => [...prev, { role: 'user', content: userMessage }, { role: 'assistant', content: data.response }]);
-      
+
       // Focus back on input
       setTimeout(() => {
         inputRef.current?.focus();
@@ -130,7 +132,7 @@ export default function SharedGildaPage() {
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
-      
+
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
@@ -207,75 +209,74 @@ export default function SharedGildaPage() {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="max-w-4xl mx-auto space-y-4">
-          {messages.map((message, index) => {
-            const isUser = message.role === 'user';
-            const textColor = isUser ? (isLightColor(brandColor) ? '#1f2937' : '#ffffff') : undefined;
-            const gradientEnd = isUser ? getGradientEndColor(brandColor) : undefined;
-            const messageStyle = isUser ? {
-              background: `linear-gradient(135deg, ${brandColor} 0%, ${gradientEnd} 100%)`,
-              color: textColor
-            } : {};
+            {messages.map((message, index) => {
+              const isUser = message.role === 'user';
+              const textColor = isUser ? (isLightColor(brandColor) ? '#1f2937' : '#ffffff') : undefined;
+              const gradientEnd = isUser ? getGradientEndColor(brandColor) : undefined;
+              const messageStyle = isUser ? {
+                background: `linear-gradient(135deg, ${brandColor} 0%, ${gradientEnd} 100%)`,
+                color: textColor
+              } : {};
 
-            return (
-              <div
-                key={index}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+              return (
                 <div
-                  className={`max-w-3xl px-4 py-3 rounded-lg ${
-                    message.role === 'user'
-                      ? ''
-                      : 'bg-white text-gray-900 border border-gray-200'
-                  }`}
-                  style={messageStyle}
+                  key={index}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  {message.role === 'assistant' ? (
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
-                  ) : (
-                    <p>{message.content}</p>
-                  )}
+                  <div
+                    className={`max-w-3xl px-4 py-3 rounded-lg ${message.role === 'user'
+                        ? ''
+                        : 'bg-white text-gray-900 border border-gray-200'
+                      }`}
+                    style={messageStyle}
+                  >
+                    {message.role === 'assistant' ? (
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                    ) : (
+                      <p>{message.content}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-white border border-gray-200 px-4 py-3 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
                 </div>
               </div>
-            );
-          })}
-          
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-white border border-gray-200 px-4 py-3 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-              </div>
-            </div>
-          )}
-          
+            )}
+
             <div ref={messagesEndRef} />
           </div>
         </div>
 
         {/* Input */}
         <div className="border-t bg-white bg-opacity-90 backdrop-blur-md p-4">
-        <div className="max-w-4xl mx-auto flex space-x-3">
-          <textarea
-            ref={inputRef}
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask me anything about your company policies..."
-            className="flex-1 resize-none border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            rows="1"
-            disabled={isLoading}
-          />
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isLoading}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-          >
-            Send
-          </button>
-        </div>
+          <div className="max-w-4xl mx-auto flex space-x-3">
+            <textarea
+              ref={inputRef}
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask me anything about your company policies..."
+              className="flex-1 resize-none border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="1"
+              disabled={isLoading}
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!inputMessage.trim() || isLoading}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              Send
+            </button>
+          </div>
         </div>
       </div>
     </DynamicGradient>

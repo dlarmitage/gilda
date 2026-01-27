@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getUserPDFs, createPDFUpload, getActivePDF, getUserById, createUser, query } from '../../../lib/db';
+import { getUserPDFs, createPDFUpload, getActivePDF, getUserById, createUser, query, savePDFChunks } from '../../../lib/db';
+import { chunkText, generateEmbeddings } from '../../../lib/embeddings';
 
 // GET - Retrieve user's documents
 export async function GET(request) {
@@ -20,7 +21,7 @@ export async function GET(request) {
     console.log('GET /api/documents - Calling getUserPDFs with userId:', userId);
     const documents = await getUserPDFs(userId);
     console.log('GET /api/documents - Raw documents from DB:', documents);
-    
+
     // Format documents for frontend
     const formattedDocuments = documents.map(doc => ({
       id: doc.id,
@@ -106,7 +107,7 @@ export async function POST(request) {
         contentLength: doc.content ? doc.content.length : 0,
         size: doc.size
       });
-      
+
       try {
         const result = await createPDFUpload(
           userId,
@@ -116,6 +117,26 @@ export async function POST(request) {
           doc.size || doc.content.length
         );
         console.log(`POST /api/documents - Document ${index + 1} saved:`, result);
+
+        // NEW RAG LOGIC: Chunk and embed the content
+        if (doc.content) {
+          console.log(`POST /api/documents - Chunking and embedding document ${index + 1}...`);
+          const chunks = chunkText(doc.content);
+          console.log(`POST /api/documents - Generated ${chunks.length} chunks`);
+
+          // Generate embeddings in batches of 100 to avoid OpenAI limits
+          const batchSize = 100;
+          const allEmbeddings = [];
+          for (let i = 0; i < chunks.length; i += batchSize) {
+            const batch = chunks.slice(i, i + batchSize);
+            console.log(`POST /api/documents - Generating embeddings for batch ${Math.floor(i / batchSize) + 1}...`);
+            const batchEmbeddings = await generateEmbeddings(batch);
+            allEmbeddings.push(...batchEmbeddings);
+          }
+
+          await savePDFChunks(result.id, chunks, allEmbeddings);
+          console.log(`POST /api/documents - Chunks and embeddings saved for document ${index + 1}`);
+        }
       } catch (docError) {
         console.error(`POST /api/documents - Error saving document ${index + 1}:`, docError);
         throw docError;
