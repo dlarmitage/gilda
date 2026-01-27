@@ -30,14 +30,15 @@ export async function POST(request) {
             .map(chunk => chunk.content)
             .join('\n\n---\n\n');
 
-        const systemPrompt = `You are Gilda's "Source Insight" specialist. Your task is to provide the EXACT, VERBATIM language and comprehensive details found in the document regarding: "${searchQuery}".
+        const systemPrompt = `You are Gilda's "Source Insight" specialist. Your task is to provide the EXACT, VERBATIM language and comprehensive details regarding: "${searchQuery}".
     
 RULES:
-1. Show the original language as it appears in the source snippets.
-2. Provide as much detail as possible (descriptions, dates, codes, requirements, etc.).
-3. If there is a "verbatim" section or bulleted list of rules in the snippets, reproduce those accurately.
-4. Format your response with clear headings and bolded key terms.
-5. Do not add outside knowledge. Only use the provided snippets.`;
+1. Show the original language as it appears in source snippets.
+2. Provide all specific details (codes, requirements, dates, etc.).
+3. SEARCH RECURSION: If you mention another related policy, course code, or significant entity that exists in the document, format it as an interactive link: [**Name**](#lookup:Search Query).
+   - Example: "Prerequisite: [**ANTH 2200**](#lookup:ANTH 2200 course details)"
+4. Format with clear headings and bolded terms.
+5. Only use the provided snippets.`;
 
         const completion = await openai.chat.completions.create({
             model: 'gpt-4-turbo',

@@ -614,7 +614,35 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                 </div>
               ) : (
                 <div className="detail-details-text">
-                  <ReactMarkdown>{itemDetails}</ReactMarkdown>
+                  <ReactMarkdown
+                    components={{
+                      a: ({ node, ...props }) => {
+                        const href = props.href || '';
+                        if (href.startsWith('#lookup:')) {
+                          const query = decodeURIComponent(href.replace('#lookup:', ''));
+                          return (
+                            <span
+                              className="deep-dive-link"
+                              role="button"
+                              tabIndex={0}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleItemLookup(query);
+                              }}
+                            >
+                              {props.children}
+                            </span>
+                          );
+                        }
+                        return <a {...props} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} />;
+                      }
+                    }}
+                  >
+                    {itemDetails.replace(/]\(#lookup:([^)]+)\)/g, (match, query) => {
+                      return `](#lookup:${encodeURIComponent(query)})`;
+                    })}
+                  </ReactMarkdown>
                 </div>
               )}
             </div>
