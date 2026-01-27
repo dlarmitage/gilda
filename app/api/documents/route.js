@@ -100,62 +100,73 @@ export async function POST(request) {
       // Continue anyway - we'll try to insert new ones
     }
 
-    // Insert new documents
-    await Promise.all(documents.map(async (doc, index) => {
-      console.log(`POST /api/documents - Processing document ${index + 1}:`, {
-        filename: doc.filename,
-        contentLength: doc.content ? doc.content.length : 0,
-        size: doc.size
-      });
+    // We'll return a stream to provide real-time progress updates
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const sendProgress = (data) => {
+          controller.enqueue(encoder.encode(JSON.stringify(data) + '\n'));
+        };
 
-      try {
-        const result = await createPDFUpload(
-          userId,
-          doc.filename,
-          doc.filename,
-          doc.content,
-          doc.size || doc.content.length
-        );
-        console.log(`POST /api/documents - Document ${index + 1} saved:`, result);
+        try {
+          // Process documents sequentially to provide accurate progress
+          for (const [index, doc] of documents.entries()) {
+            sendProgress({ status: 'saving', filename: doc.filename, index: index + 1, total: documents.length });
 
-        // NEW RAG LOGIC: Chunk and embed the content
-        if (doc.content) {
-          console.log(`POST /api/documents - Chunking and embedding document ${index + 1}...`);
-          const chunks = chunkText(doc.content);
-          console.log(`POST /api/documents - Generated ${chunks.length} chunks`);
+            const result = await createPDFUpload(
+              userId,
+              doc.filename,
+              doc.filename,
+              doc.content,
+              doc.size || doc.content.length
+            );
 
-          // Generate embeddings in batches of 100 to avoid OpenAI limits
-          const batchSize = 100;
-          const allEmbeddings = [];
-          for (let i = 0; i < chunks.length; i += batchSize) {
-            const batch = chunks.slice(i, i + batchSize);
-            console.log(`POST /api/documents - Generating embeddings for batch ${Math.floor(i / batchSize) + 1}...`);
-            const batchEmbeddings = await generateEmbeddings(batch);
-            allEmbeddings.push(...batchEmbeddings);
+            if (doc.content) {
+              const chunks = chunkText(doc.content);
+              sendProgress({ status: 'chunked', filename: doc.filename, chunkCount: chunks.length });
+
+              const batchSize = 50; // Smaller batches for more frequent updates
+              const allEmbeddings = [];
+              for (let i = 0; i < chunks.length; i += batchSize) {
+                const batch = chunks.slice(i, i + batchSize);
+                sendProgress({
+                  status: 'indexing',
+                  filename: doc.filename,
+                  currentChunk: i + 1,
+                  totalChunks: chunks.length
+                });
+
+                const batchEmbeddings = await generateEmbeddings(batch);
+                allEmbeddings.push(...batchEmbeddings);
+              }
+
+              await savePDFChunks(result.id, chunks, allEmbeddings);
+              sendProgress({ status: 'completed_doc', filename: doc.filename });
+            }
           }
 
-          await savePDFChunks(result.id, chunks, allEmbeddings);
-          console.log(`POST /api/documents - Chunks and embeddings saved for document ${index + 1}`);
+          sendProgress({ status: 'success', message: 'All documents processed' });
+          controller.close();
+        } catch (error) {
+          console.error('Stream error:', error);
+          sendProgress({ status: 'error', message: error.message });
+          controller.close();
         }
-      } catch (docError) {
-        console.error(`POST /api/documents - Error saving document ${index + 1}:`, docError);
-        throw docError;
       }
-    }));
+    });
 
-    console.log('POST /api/documents - All documents saved successfully');
-
-    return NextResponse.json({
-      message: 'Documents saved successfully',
-      count: documents.length
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'application/x-ndjson',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
 
   } catch (error) {
-    console.error('POST /api/documents - Error saving documents:', error);
-    console.error('POST /api/documents - Error details:', error.message);
-    console.error('POST /api/documents - Error stack:', error.stack);
+    console.error('POST /api/documents - Error:', error);
     return NextResponse.json(
-      { error: 'Failed to save documents', details: error.message },
+      { error: 'Failed to initiate upload', details: error.message },
       { status: 500 }
     );
   }

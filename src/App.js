@@ -307,7 +307,6 @@ export default function App() {
           };
 
           const sendBatch = async (batch) => {
-            setUploadStatus(`Indexing ${batch.length} content chunks... (this may take a minute)`);
             const response = await fetch('/api/documents', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -317,25 +316,43 @@ export default function App() {
             if (!response.ok) {
               const errorText = await response.text();
               console.error('Failed to save batch:', response.statusText, errorText);
-            } else {
-              const saveData = await response.json();
-              console.log('Batch saved successfully:', saveData);
+              return;
+            }
+
+            // Read the stream
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split('\n').filter(line => line.trim());
+
+              for (const line of lines) {
+                try {
+                  const data = JSON.parse(line);
+                  if (data.status === 'indexing') {
+                    setUploadStatus(`Indexing ${data.filename}: chunk ${data.currentChunk} / ${data.totalChunks}...`);
+                  } else if (data.status === 'saving') {
+                    setUploadStatus(`Saving ${data.filename} to database...`);
+                  } else if (data.status === 'chunked') {
+                    setUploadStatus(`Prepared ${data.chunkCount} chunks for ${data.filename}...`);
+                  } else if (data.status === 'success') {
+                    console.log('Batch processed successfully');
+                  } else if (data.status === 'error') {
+                    console.error('Error during indexing:', data.message);
+                    alert(`Error: ${data.message}`);
+                  }
+                } catch (e) {
+                  console.error('Error parsing stream chunk:', e, line);
+                }
+              }
             }
           };
 
           await uploadInBatches(documentsToUpload);
-
-          console.log('Save response status:', response.status);
-          console.log('Save response ok:', response.ok);
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Failed to save documents to database:', response.statusText);
-            console.error('Error response:', errorText);
-          } else {
-            const saveData = await response.json();
-            console.log('Documents saved to database successfully:', saveData);
-          }
         }
       }
 
