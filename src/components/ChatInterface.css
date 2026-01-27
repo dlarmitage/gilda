@@ -815,46 +815,42 @@
   color: #374151;
   font-weight: 600;
   padding: 4px 12px;
-  background: white;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
 } */
 
-/* Course Link Button */
-.course-link-btn {
-  background: #f0f7ff;
-  border: 1px solid #cce3ff;
+/* Detail Link Button */
+.detail-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
   color: #4880db;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 14px;
+  font-size: inherit;
+  font-weight: 600;
   transition: all 0.2s ease;
-  margin: 0 2px;
-  display: inline-block;
-  vertical-align: middle;
+  margin: 0;
+  display: inline;
 }
 
-.course-link-btn:hover {
-  background: #e0efff;
-  border-color: #4880db;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(72, 128, 219, 0.2);
+.detail-link-btn:hover {
+  color: #3b6ebf;
+  background: rgba(72, 128, 219, 0.05);
+  border-radius: 4px;
 }
 
-/* Course Modal Extensions */
-.course-modal {
+/* Detail Modal Extensions */
+.detail-modal {
   max-width: 600px !important;
 }
 
-.course-modal-content {
+.detail-modal-content {
   padding: 24px;
   min-height: 200px;
 }
 
-.course-loading {
+.detail-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -863,7 +859,7 @@
   padding: 40px 0;
 }
 
-.course-loading .spinner {
+.detail-loading .spinner {
   width: 30px;
   height: 30px;
   border: 3px solid #f3f4f6 !important;
@@ -872,19 +868,19 @@
   animation: spin 1s linear infinite;
 }
 
-.course-details-text {
+.detail-details-text {
   line-height: 1.7;
   color: #374151;
 }
 
-.course-details-text h1,
-.course-details-text h2,
-.course-details-text h3 {
+.detail-details-text h1,
+.detail-details-text h2,
+.detail-details-text h3 {
   color: #111827;
   margin: 20px 0 10px 0;
 }
 
-.course-details-text p {
+.detail-details-text p {
   margin-bottom: 12px;
 }
 

@@ -8,36 +8,36 @@ const openai = new OpenAI({
 
 export async function POST(request) {
     try {
-        const { courseCode, userId } = await request.json();
+        const { itemIdentifier, userId } = await request.json();
 
-        if (!courseCode || !userId) {
+        if (!itemIdentifier || !userId) {
             return Response.json(
-                { error: 'Course code and User ID are required' },
+                { error: 'Identifier and User ID are required' },
                 { status: 400 }
             );
         }
 
-        // Use RAG to find the most relevant information about this specific course code
-        const queryEmbedding = await generateEmbeddings(`Information about course ${courseCode}`);
+        // Use RAG to find the most relevant information about this specific identifier
+        const queryEmbedding = await generateEmbeddings(`Detailed information about ${itemIdentifier}`);
         const relevantChunks = await searchPDFChunks(userId, queryEmbedding, 10);
 
         if (relevantChunks.length === 0) {
-            return Response.json({ message: 'Course information not found.' });
+            return Response.json({ message: 'Information not found.' });
         }
 
         const context = relevantChunks
             .map(chunk => chunk.content)
             .join('\n\n---\n\n');
 
-        const systemPrompt = `You are a helpful academic advisor. Provide a detailed summary of the course ${courseCode} based ONLY on the provided snippets from the course catalog. Include description, credits, prerequisites, and any other relevant details if found.`;
+        const systemPrompt = `You are a helpful knowledge assistant. Provide a detailed summary about "${itemIdentifier}" based ONLY on the provided snippets. Include all relevant details, descriptions, and specifications found in the text.`;
 
         const completion = await openai.chat.completions.create({
             model: 'gpt-4-turbo',
             messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: `Snippets from catalog:\n${context}` }
+                { role: 'user', content: `Snippets from the document:\n${context}` }
             ],
-            max_completion_tokens: 800,
+            max_completion_tokens: 1000,
         });
 
         return Response.json({
