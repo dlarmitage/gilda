@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getUserPDFs, createPDFUpload, getActivePDF, getUserById, createUser, query, savePDFChunks } from '../../../lib/db';
 import { chunkText, generateEmbeddings } from '../../../lib/embeddings';
 
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
+
 // GET - Retrieve user's documents
 export async function GET(request) {
   try {
@@ -125,22 +128,21 @@ export async function POST(request) {
               const chunks = chunkText(doc.content);
               sendProgress({ status: 'chunked', filename: doc.filename, chunkCount: chunks.length });
 
-              const batchSize = 50; // Smaller batches for more frequent updates
-              const allEmbeddings = [];
+              const batchSize = 25; // Smaller batches for frequent updates and timeout prevention
               for (let i = 0; i < chunks.length; i += batchSize) {
                 const batch = chunks.slice(i, i + batchSize);
                 sendProgress({
                   status: 'indexing',
                   filename: doc.filename,
-                  currentChunk: i + 1,
+                  currentChunk: Math.min(i + batchSize, chunks.length),
                   totalChunks: chunks.length
                 });
 
                 const batchEmbeddings = await generateEmbeddings(batch);
-                allEmbeddings.push(...batchEmbeddings);
+                // Save this batch immediately to the database
+                await savePDFChunks(result.id, batch, batchEmbeddings);
               }
 
-              await savePDFChunks(result.id, chunks, allEmbeddings);
               sendProgress({ status: 'completed_doc', filename: doc.filename });
             }
           }
