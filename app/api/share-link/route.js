@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { createShareLink, getShareLink } from '../../../lib/db';
+import { createShareLink, getShareLink, getUserPDFs } from '../../../lib/db';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -14,12 +14,26 @@ export async function POST(request) {
     let finalDocuments = documents;
     let finalPdfContent = pdfContent;
 
+    // If documents are missing but userId is provided, fetch from DB to get the content context
+    if ((!finalDocuments || finalDocuments.length === 0) && userId) {
+      console.log('Fetching documents from DB for share link context, userId:', userId);
+      const dbDocs = await getUserPDFs(userId);
+      if (dbDocs && dbDocs.length > 0) {
+        finalDocuments = dbDocs.map(doc => ({
+          id: doc.id,
+          filename: doc.original_filename,
+          content: doc.content_text,
+          size: doc.file_size
+        }));
+      }
+    }
+
     // Generate combined content from documents if finalPdfContent is not provided
     if (!finalPdfContent && finalDocuments) {
       finalPdfContent = finalDocuments
         .filter(doc => doc.content && doc.content.trim().length > 0)
-        .map(doc => `=== ${doc.filename} ===\n\n${doc.content}\n\n`)
-        .join('');
+        .map(doc => doc.content)
+        .join('\n\n');
     }
 
     // Safety: Limit stored content size
@@ -28,35 +42,38 @@ export async function POST(request) {
       finalPdfContent = finalPdfContent.substring(0, MAX_CHARS) + "\n\n[Content truncated for shared view size limits]";
     }
 
-    // AI Generation of Public Title and Description
+    // AI Generation of Public Title and Description based on ACTUAL document content
     let publicTitle = "Knowledge Base";
     let publicDescription = "An AI-powered assistant for your documents.";
 
-    try {
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4-turbo",
-        messages: [
-          {
-            role: "system",
-            content: "You are a professional strategist. Your task is to generate a user-friendly, public-facing title and a 1-sentence description for a knowledge base based on the provided document content snippets. The title should be actionable (e.g., 'See Your Course Calendar' or 'Employee Handbook Helper') and the description should be helpful. Return ONLY a JSON object with 'title' and 'description' keys."
-          },
-          {
-            role: "user",
-            content: `Document Snippets:\n${finalPdfContent?.substring(0, 5000)}`
-          }
-        ],
-        response_format: { type: "json_object" }
-      });
+    if (finalPdfContent && finalPdfContent.trim().length > 10) {
+      try {
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4-turbo",
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional strategist. Your task is to generate a specific, user-friendly, public-facing title and a 1-sentence description for a knowledge base based on the provided document library. \n\nCRITICAL: DO NOT use generic phrases like 'Knowledge Base' or 'Access Our Policy'. Instead, identify exactly what the document is (e.g., 'Anthropology Course Catalog', '2024 Employee Handbook', 'Archaeology Major Requirements') and create an actionable title (e.g., 'Explore Archaeology Requirements' or 'Search the 2024 Course Catalog'). \n\nReturn ONLY a JSON object with 'title' and 'description' keys."
+            },
+            {
+              role: "user",
+              content: `Document Content Sample:\n${finalPdfContent?.substring(0, 10000)}`
+            }
+          ],
+          response_format: { type: "json_object" }
+        });
 
-      const aiResponse = JSON.parse(completion.choices[0].message.content);
-      publicTitle = aiResponse.title;
-      publicDescription = aiResponse.description;
-    } catch (aiErr) {
-      console.error("AI Meta Generation Error:", aiErr);
-      // Fallback to filename if AI fails
-      if (finalDocuments && finalDocuments.length > 0) {
-        publicTitle = `Explore ${finalDocuments[0].filename.replace(/\s*\(Part\s*\d+\)/i, '')}`;
+        const aiResponse = JSON.parse(completion.choices[0].message.content);
+        publicTitle = aiResponse.title;
+        publicDescription = aiResponse.description;
+      } catch (aiErr) {
+        console.error("AI Meta Generation Error:", aiErr);
       }
+    }
+
+    // Fallback: If AI fails or content is missing, use the filename
+    if (publicTitle === "Knowledge Base" && finalDocuments && finalDocuments.length > 0) {
+      publicTitle = `Explore ${finalDocuments[0].filename.replace(/\s*\(Part\s*\d+\)/i, '')}`;
     }
 
     // Generate unique share ID
