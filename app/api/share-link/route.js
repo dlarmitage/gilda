@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { getActivePDF, getUserPDFs } from '../../../lib/db';
-
-import { shareLinks } from '../../../lib/shared-store';
+import { createShareLink, getShareLink } from '../../../lib/db';
 
 export async function POST(request) {
   try {
@@ -10,27 +8,6 @@ export async function POST(request) {
 
     let finalDocuments = documents;
     let finalPdfContent = pdfContent;
-
-    // If documents are missing but userId is provided, fetch from DB
-    if ((!finalDocuments || finalDocuments.length === 0) && userId) {
-      console.log('Fetching documents from DB for share link, userId:', userId);
-      const dbDocs = await getUserPDFs(userId);
-      if (dbDocs && dbDocs.length > 0) {
-        finalDocuments = dbDocs.map(doc => ({
-          id: doc.id,
-          filename: doc.original_filename,
-          content: doc.content_text,
-          size: doc.file_size
-        }));
-      }
-    }
-
-    if (!finalDocuments || finalDocuments.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one document is required to create share link' },
-        { status: 400 }
-      );
-    }
 
     // Generate combined content from documents if finalPdfContent is not provided
     if (!finalPdfContent && finalDocuments) {
@@ -40,7 +17,7 @@ export async function POST(request) {
         .join('');
     }
 
-    // Safety: Limit stored content size (OpenAI token limits + memory safety)
+    // Safety: Limit stored content size
     const MAX_CHARS = 300000;
     if (finalPdfContent && finalPdfContent.length > MAX_CHARS) {
       finalPdfContent = finalPdfContent.substring(0, MAX_CHARS) + "\n\n[Content truncated for shared view size limits]";
@@ -49,21 +26,17 @@ export async function POST(request) {
     // Generate unique share ID
     const shareId = nanoid(12);
 
-    // Store the shared content
+    // Store the shared content in the database
     const shareData = {
-      id: shareId,
       pdfContent: finalPdfContent,
-      pdfMetadata,
-      documents: finalDocuments,
+      pdfMetadata: pdfMetadata || {},
+      documents: finalDocuments || [],
       userId,
       brandColor: brandColor || '#4880db',
-      brandTransparency: brandTransparency !== undefined ? parseFloat(brandTransparency) : 0.5,
-      createdAt: new Date().toISOString(),
-      accessCount: 0,
-      lastAccessed: null
+      brandTransparency: brandTransparency !== undefined ? parseFloat(brandTransparency) : 0.5
     };
 
-    shareLinks.set(shareId, shareData);
+    await createShareLink(shareId, shareData);
 
     // Determine the base URL dynamically from the request headers
     const protocol = request.headers.get('x-forwarded-proto') || 'https';
@@ -100,7 +73,7 @@ export async function GET(request) {
       );
     }
 
-    const shareData = shareLinks.get(shareId);
+    const shareData = await getShareLink(shareId);
 
     if (!shareData) {
       return NextResponse.json(
@@ -109,20 +82,7 @@ export async function GET(request) {
       );
     }
 
-    // Update access statistics
-    shareData.accessCount += 1;
-    shareData.lastAccessed = new Date().toISOString();
-
-    return NextResponse.json({
-      shareId: shareData.id,
-      pdfContent: shareData.pdfContent,
-      pdfMetadata: shareData.pdfMetadata,
-      documents: shareData.documents,
-      brandColor: shareData.brandColor || '#4880db',
-      brandTransparency: shareData.brandTransparency !== undefined ? shareData.brandTransparency : 0.5,
-      createdAt: shareData.createdAt,
-      accessCount: shareData.accessCount
-    });
+    return NextResponse.json(shareData);
 
   } catch (error) {
     console.error('Error retrieving share link:', error);
