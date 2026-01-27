@@ -402,13 +402,22 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                     components={{
                       a: ({ node, ...props }) => {
                         const href = props.href || '';
-                        // Support both detail: and course: schemes, case-insensitive
                         const lowercaseHref = href.toLowerCase();
-                        const isInternalLink = lowercaseHref.startsWith('detail:') || lowercaseHref.startsWith('course:');
 
-                        if (isInternalLink) {
-                          // Extract identifier (everything after the colon)
-                          const identifier = href.split(':').slice(1).join(':');
+                        // Check if it's an external link
+                        const isExternal = lowercaseHref.startsWith('http') ||
+                          lowercaseHref.startsWith('www') ||
+                          lowercaseHref.startsWith('mailto:') ||
+                          lowercaseHref.startsWith('tel:');
+
+                        if (!isExternal) {
+                          // Handle as an internal detail lookup
+                          // Extract identifier - remove prefixes if present (detail: or course:)
+                          let identifier = href;
+                          if (lowercaseHref.startsWith('detail:') || lowercaseHref.startsWith('course:')) {
+                            identifier = href.split(':').slice(1).join(':');
+                          }
+
                           return (
                             <button
                               type="button"
@@ -416,7 +425,9 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleItemLookup(identifier);
+                                if (identifier) {
+                                  handleItemLookup(identifier);
+                                }
                               }}
                             >
                               {props.children}
@@ -424,7 +435,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                           );
                         }
 
-                        // Default fallback for external links
+                        // For external links, open in new tab
                         return <a {...props} target="_blank" rel="noopener noreferrer" />;
                       }
                     }}

@@ -827,8 +827,7 @@
   border: none;
   padding: 0;
   color: #4880db;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration: none;
   cursor: pointer;
   font-family: inherit;
   font-size: inherit;
@@ -840,6 +839,7 @@
 
 .detail-link-btn:hover {
   color: #3b6ebf;
+  text-decoration: underline;
   background: rgba(72, 128, 219, 0.05);
   border-radius: 4px;
 }
