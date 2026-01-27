@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { createShareLink, getShareLink } from '../../../lib/db';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(request) {
   try {
@@ -23,6 +28,37 @@ export async function POST(request) {
       finalPdfContent = finalPdfContent.substring(0, MAX_CHARS) + "\n\n[Content truncated for shared view size limits]";
     }
 
+    // AI Generation of Public Title and Description
+    let publicTitle = "Knowledge Base";
+    let publicDescription = "An AI-powered assistant for your documents.";
+
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional strategist. Your task is to generate a user-friendly, public-facing title and a 1-sentence description for a knowledge base based on the provided document content snippets. The title should be actionable (e.g., 'See Your Course Calendar' or 'Employee Handbook Helper') and the description should be helpful. Return ONLY a JSON object with 'title' and 'description' keys."
+          },
+          {
+            role: "user",
+            content: `Document Snippets:\n${finalPdfContent?.substring(0, 5000)}`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const aiResponse = JSON.parse(completion.choices[0].message.content);
+      publicTitle = aiResponse.title;
+      publicDescription = aiResponse.description;
+    } catch (aiErr) {
+      console.error("AI Meta Generation Error:", aiErr);
+      // Fallback to filename if AI fails
+      if (finalDocuments && finalDocuments.length > 0) {
+        publicTitle = `Explore ${finalDocuments[0].filename.replace(/\s*\(Part\s*\d+\)/i, '')}`;
+      }
+    }
+
     // Generate unique share ID
     const shareId = nanoid(12);
 
@@ -33,7 +69,9 @@ export async function POST(request) {
       documents: finalDocuments || [],
       userId,
       brandColor: brandColor || '#4880db',
-      brandTransparency: brandTransparency !== undefined ? parseFloat(brandTransparency) : 0.5
+      brandTransparency: brandTransparency !== undefined ? parseFloat(brandTransparency) : 0.5,
+      publicTitle,
+      publicDescription
     };
 
     await createShareLink(shareId, shareData);

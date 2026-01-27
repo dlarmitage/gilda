@@ -21,7 +21,8 @@ export default function SharedGildaPage() {
   const [brandColor, setBrandColor] = useState('#4880db');
   const [brandTransparency, setBrandTransparency] = useState(0.5);
   const [userId, setUserId] = useState(null);
-  const [kbTitle, setKbTitle] = useState('Knowledge Base');
+  const [publicTitle, setPublicTitle] = useState('Knowledge Base');
+  const [publicDescription, setPublicDescription] = useState('Ask me anything about these documents.');
 
   // Item lookup modal states
   const [showItemModal, setShowItemModal] = useState(false);
@@ -89,22 +90,17 @@ export default function SharedGildaPage() {
         setBrandTransparency(data.brandTransparency !== undefined ? data.brandTransparency : 0.5);
         setUserId(data.userId);
 
-        // Group documents and find a clean title
-        if (data.documents && data.documents.length > 0) {
-          const firstDoc = data.documents[0].filename;
-          const cleanTitle = firstDoc.replace(/\s*\(Part\s*\d+\)/i, '');
-          setKbTitle(cleanTitle);
+        // Use AI-generated title/description if available, else fallback
+        const title = data.publicTitle || (data.documents?.[0]?.filename.replace(/\s*\(Part\s*\d+\)/i, '') || 'Knowledge Base');
+        const description = data.publicDescription || 'Ask me anything about these documents.';
 
-          setMessages([{
-            role: 'assistant',
-            content: `👋 Hello! I'm Gilda, your AI assistant. I've been trained on the **${cleanTitle}** knowledge base and I'm here to help you find specific insights. What would you like to know?`
-          }]);
-        } else {
-          setMessages([{
-            role: 'assistant',
-            content: `👋 Hello! I'm Gilda, your AI assistant. I'm ready to answer questions about your documents. What's on your mind?`
-          }]);
-        }
+        setPublicTitle(title);
+        setPublicDescription(description);
+
+        setMessages([{
+          role: 'assistant',
+          content: `👋 Hello! I'm Gilda, your AI assistant. I've been trained on the **${title}** knowledge base and I'm here to help you find specific insights. What would you like to know?`
+        }]);
       } else {
         setError(data.error || 'Failed to load shared content');
       }
@@ -244,9 +240,9 @@ export default function SharedGildaPage() {
               <span className="text-4xl">🤖</span>
               <h1 className="text-3xl font-extrabold text-gray-900" style={{ letterSpacing: '-0.5px' }}>Gilda</h1>
             </div>
-            <div className="hidden md:flex flex-col items-end">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Knowledge Base</span>
-              <span className="text-gray-900 font-bold truncate max-w-md">{kbTitle}</span>
+            <div className="hidden md:flex flex-col items-end text-right">
+              <h2 className="text-xl font-bold text-gray-900 leading-tight">{publicTitle}</h2>
+              <p className="text-xs text-gray-500 max-w-sm italic line-clamp-1">{publicDescription}</p>
             </div>
           </div>
         </div>
@@ -338,7 +334,7 @@ export default function SharedGildaPage() {
               value={userMessage}
               onChange={(e) => setUserMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={`Ask me anything about ${kbTitle}...`}
+              placeholder={`Ask me anything about this knowledge base...`}
               className="flex-1 resize-none border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
               rows="1"
               disabled={isLoading}
