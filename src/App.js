@@ -60,6 +60,8 @@ export default function App() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [brandColor, setBrandColor] = useState('#4880db');
   const [brandTransparency, setBrandTransparency] = useState(0.5);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -173,6 +175,8 @@ export default function App() {
   };
 
   const handlePdfUpload = async (uploadData) => {
+    setIsUploading(true);
+    setUploadStatus('Starting upload...');
     try {
       const userId = user?.id;
       let allDocuments = [];
@@ -183,7 +187,8 @@ export default function App() {
         if (uploadData.files[0] instanceof File) {
           // Files are raw File objects, need to process them
           const processedFiles = await Promise.all(
-            uploadData.files.map(async (file) => {
+            uploadData.files.map(async (file, index) => {
+              setUploadStatus(`Extracting text from ${file.name}...`);
               // Check for duplicate filenames
               const existingDoc = documents.find(doc => doc.filename === file.name);
               if (existingDoc) {
@@ -234,6 +239,7 @@ export default function App() {
         console.log('Saving documents to database...');
         console.log('Documents to save:', allDocuments);
         console.log('User ID:', userId);
+        setUploadStatus('Preparing documents for database...');
 
         // Validate that all documents have content before saving
         const validDocuments = allDocuments.filter(doc => {
@@ -254,6 +260,7 @@ export default function App() {
 
           validDocuments.forEach(doc => {
             if (doc.content.length > MAX_PART_SIZE) {
+              setUploadStatus(`Large document detected: ${doc.filename}. Splitting for transport...`);
               console.log(`Document ${doc.filename} is too large (${doc.content.length} chars), splitting into parts...`);
               const parts = Math.ceil(doc.content.length / MAX_PART_SIZE);
 
@@ -281,8 +288,10 @@ export default function App() {
             let currentBatch = [];
             let currentBatchSize = 0;
 
-            for (const doc of allDocs) {
+            for (let i = 0; i < allDocs.length; i++) {
+              const doc = allDocs[i];
               const docChars = doc.content?.length || 0;
+              setUploadStatus(`Uploading part ${i + 1} of ${allDocs.length}...`);
               if (currentBatchSize + docChars > batchLimit && currentBatch.length > 0) {
                 await sendBatch(currentBatch);
                 currentBatch = [];
@@ -298,6 +307,7 @@ export default function App() {
           };
 
           const sendBatch = async (batch) => {
+            setUploadStatus(`Indexing ${batch.length} content chunks... (this may take a minute)`);
             const response = await fetch('/api/documents', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -348,8 +358,9 @@ export default function App() {
       setPdfLoaded(true);
       setShowUpload(false); // Close modal after upload
       console.log('PDFs uploaded successfully');
-    } catch (error) {
-      console.error('Error processing PDF:', error);
+    } finally {
+      setIsUploading(false);
+      setUploadStatus('');
     }
   };
 
@@ -530,6 +541,13 @@ export default function App() {
                     onChange={handleFileInput}
                   />
                 </div>
+                {isUploading && (
+                  <div className="upload-loading-overlay">
+                    <div className="spinner"></div>
+                    <p className="upload-status-text">{uploadStatus}</p>
+                    <p className="upload-warning-text">Don't close this window, we're building your AI index.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
