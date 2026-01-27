@@ -14,6 +14,10 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [selectedBrandColor, setSelectedBrandColor] = useState(brandColor);
   const [selectedTransparency, setSelectedTransparency] = useState(brandTransparency);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [courseDetails, setCourseDetails] = useState('');
+  const [isFetchingCourse, setIsFetchingCourse] = useState(false);
+  const [showCourseModal, setShowCourseModal] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -121,6 +125,38 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
       }, 100);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCourseAction = async (courseCode) => {
+    setIsFetchingCourse(true);
+    setSelectedCourse(courseCode);
+    setShowCourseModal(true);
+    setCourseDetails('Fetching course details...');
+
+    try {
+      const response = await fetch('/api/course-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courseCode,
+          userId: user?.id
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setCourseDetails(data.details);
+      } else {
+        setCourseDetails('Failed to load course details.');
+      }
+    } catch (error) {
+      console.error('Error fetching course info:', error);
+      setCourseDetails('Error loading course details.');
+    } finally {
+      setIsFetchingCourse(false);
     }
   };
 
@@ -362,7 +398,30 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
               </div>
               <div className="message-content" style={messageStyle}>
                 {msg.role === 'assistant' ? (
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <ReactMarkdown
+                    components={{
+                      a: ({ node, ...props }) => {
+                        const isCourseLink = props.href?.startsWith('course:');
+                        if (isCourseLink) {
+                          const courseCode = props.href.replace('course:', '');
+                          return (
+                            <button
+                              className="course-link-btn"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleCourseAction(courseCode);
+                              }}
+                            >
+                              {props.children}
+                            </button>
+                          );
+                        }
+                        return <a {...props} />;
+                      }
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
                 ) : (
                   msg.content
                 )}
@@ -506,6 +565,37 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Course Detail Modal */}
+      {showCourseModal && (
+        <div className="modal-overlay course-modal-overlay" onClick={() => setShowCourseModal(false)}>
+          <div className="modal course-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>📚 {selectedCourse} Details</h3>
+              <button className="close-btn" onClick={() => setShowCourseModal(false)}>
+                ×
+              </button>
+            </div>
+            <div className="modal-content course-modal-content">
+              {isFetchingCourse ? (
+                <div className="course-loading">
+                  <div className="spinner"></div>
+                  <p>Searching catalog for details...</p>
+                </div>
+              ) : (
+                <div className="course-details-text">
+                  <ReactMarkdown>{courseDetails}</ReactMarkdown>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="close-modal-btn" onClick={() => setShowCourseModal(false)}>
+                Close
+              </button>
             </div>
           </div>
         </div>

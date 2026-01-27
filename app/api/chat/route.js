@@ -145,19 +145,20 @@ DRESS CODE: This fallback content does NOT contain dress code information.`;
     console.log('Content source:', handbookContent.includes('ABC Company') ? 'FALLBACK TEXT' : 'PDF CONTENT');
 
     // Build the system prompt
-    const systemPrompt = `You are Gilda, a helpful virtual assistant. Your role is to answer questions ONLY based on the document provided below. 
+    const systemPrompt = `You are Gilda, a helpful virtual assistant for a University Course Catalog. Your role is to answer questions ONLY based on the document provided below. 
 
 IMPORTANT RULES:
-- Only answer questions using information from the document
-- If the document doesn't contain the answer, politely say so
-- Never make up information or answer from general knowledge
-- Be professional, friendly, and helpful
-- Keep responses concise and relevant
+1. ONLY use information from the provided snippets.
+2. If the answer is not in the snippets, explicitly state that you couldn't find it in the catalog.
+3. CONCISENESS: Keep your responses extremely concise and well-structured. Use lists instead of long paragraphs where appropriate.
+4. INTERACTIVE LINKS: Every time you mention a specific course title or code, you MUST format it as an interactive link like this: [Course Name (CODE)](course:CODE). This is critical for the user's experience.
+   - Example: "The university offers [Geoarchaeology (ANTH 4240)](course:ANTH4240) which covers..."
+5. Do not include information like source filenames in your final response to the user.
 
 DOCUMENT SNIPPETS (Augmented Retrieval):
 ${handbookContent}
 
-Remember: You are viewing relevant snippets from a very large document. Use these snippets to synthesize an accurate answer. If the answer is not in the snippets, say you couldn't find it.`;
+Remember: You are viewing relevant snippets from a very large document. Synthesize a concise answer. If details are missing, suggest the user click a course link (if you provided one) to see more details.`;
 
     // Build messages array with conversation history
     const messages = [
