@@ -402,9 +402,13 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                     components={{
                       a: ({ node, ...props }) => {
                         const href = props.href || '';
-                        const isDetailLink = href.startsWith('course:') || href.startsWith('detail:');
-                        if (isDetailLink) {
-                          const identifier = href.split(':')[1];
+                        // Support both detail: and course: schemes, case-insensitive
+                        const lowercaseHref = href.toLowerCase();
+                        const isInternalLink = lowercaseHref.startsWith('detail:') || lowercaseHref.startsWith('course:');
+
+                        if (isInternalLink) {
+                          // Extract identifier (everything after the colon)
+                          const identifier = href.split(':').slice(1).join(':');
                           return (
                             <button
                               type="button"
@@ -419,6 +423,8 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                             </button>
                           );
                         }
+
+                        // Default fallback for external links
                         return <a {...props} target="_blank" rel="noopener noreferrer" />;
                       }
                     }}

@@ -405,8 +405,10 @@ export default function App() {
 
     // Update database if user is authenticated
     const userId = user?.id;
-    if (userId && updatedDocuments.length >= 0) {
+    if (userId) {
       try {
+        // If the document had multiple parts (grouped), we send them all to be handled
+        // The API now expects a list of IDs or we can just send the remaining documents
         const response = await fetch('/api/documents', {
           method: 'POST',
           headers: {
@@ -415,7 +417,7 @@ export default function App() {
           body: JSON.stringify({
             userId,
             documents: updatedDocuments,
-            clearExisting: true // Re-save the final list
+            clearExisting: true // This will replace the old set including all parts
           })
         });
 

@@ -21,19 +21,33 @@ export async function GET(request) {
       );
     }
 
-    console.log('GET /api/documents - Calling getUserPDFs with userId:', userId);
     const documents = await getUserPDFs(userId);
-    console.log('GET /api/documents - Raw documents from DB:', documents);
 
-    // Format documents for frontend
-    const formattedDocuments = documents.map(doc => ({
-      id: doc.id,
-      filename: doc.original_filename,
-      content: doc.content_text,
-      size: doc.file_size,
-      uploadedAt: doc.created_at,
-      isActive: doc.is_active
-    }));
+    // Group documents by original filename (to hide the "Part X" technical detail from user)
+    // We'll keep the first part's ID for reference
+    const groupedMap = new Map();
+    documents.forEach(doc => {
+      // Remove " (Part X)" suffix if it exists to get the original name
+      const baseName = doc.original_filename.replace(/ \(Part \d+\)$/, '');
+      if (!groupedMap.has(baseName)) {
+        groupedMap.set(baseName, {
+          id: doc.id,
+          filename: baseName,
+          content: doc.content_text,
+          size: doc.file_size,
+          uploadedAt: doc.created_at,
+          isActive: doc.is_active,
+          partIds: [doc.id]
+        });
+      } else {
+        const existing = groupedMap.get(baseName);
+        existing.partIds.push(doc.id);
+        existing.size += doc.file_size;
+        // Keep the oldest upload time or handle as needed
+      }
+    });
+
+    const formattedDocuments = Array.from(groupedMap.values());
 
     console.log('GET /api/documents - Formatted documents:', formattedDocuments);
 

@@ -316,17 +316,21 @@
 }
 
 .message.assistant .message-content p {
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
 .message.assistant .message-content ul,
 .message.assistant .message-content ol {
-  margin: 5px 0;
+  margin: 4px 0;
   padding-left: 20px;
 }
 
 .message.assistant .message-content li {
-  margin: 2px 0;
+  margin: 1px 0;
+}
+
+.message.assistant .message-content li p {
+  margin: 0;
 }
 
 .message.assistant .message-content strong {
