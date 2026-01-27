@@ -42,22 +42,49 @@ export async function POST(request) {
       finalPdfContent = finalPdfContent.substring(0, MAX_CHARS) + "\n\n[Content truncated for shared view size limits]";
     }
 
-    // AI Generation of Public Title and Description based on ACTUAL document content
+    // Enhanced document sampling for better global context
+    let contextSnippet = "";
+    if (finalDocuments && finalDocuments.length > 0) {
+      // Include filenames as primary evidence of intent
+      contextSnippet += "FILENAMES:\n" + finalDocuments.map(d => d.filename).join(", ") + "\n\n";
+
+      // Sample start, middle, and end of the combined content
+      const totalLen = finalPdfContent.length;
+      if (totalLen < 20000) {
+        contextSnippet += "CONTENT:\n" + finalPdfContent;
+      } else {
+        const start = finalPdfContent.substring(0, 7000);
+        const middle = finalPdfContent.substring(Math.floor(totalLen / 2) - 3500, Math.floor(totalLen / 2) + 3500);
+        const end = finalPdfContent.substring(totalLen - 7000);
+        contextSnippet += `CONTENT SAMPLE (START):\n${start}\n\nCONTENT SAMPLE (MID):\n${middle}\n\nCONTENT SAMPLE (END):\n${end}`;
+      }
+    }
+
+    // AI Generation of Public Title and Description based on DISTRIBUTED document content
     let publicTitle = "Knowledge Base";
     let publicDescription = "An AI-powered assistant for your documents.";
 
-    if (finalPdfContent && finalPdfContent.trim().length > 10) {
+    if (contextSnippet.trim().length > 10) {
       try {
         const completion = await openai.chat.completions.create({
           model: "gpt-4-turbo",
           messages: [
             {
               role: "system",
-              content: "You are a professional strategist. Your task is to generate a specific, user-friendly, public-facing title and a 1-sentence description for a knowledge base based on the provided document library. \n\nCRITICAL: DO NOT use generic phrases like 'Knowledge Base' or 'Access Our Policy'. Instead, identify exactly what the document is (e.g., 'Anthropology Course Catalog', '2024 Employee Handbook', 'Archaeology Major Requirements') and create an actionable title (e.g., 'Explore Archaeology Requirements' or 'Search the 2024 Course Catalog'). \n\nReturn ONLY a JSON object with 'title' and 'description' keys."
+              content: `You are a professional strategist. Your task is to generate a user-friendly, public-facing title and description for a shared AI knowledge base.
+
+EVIDENCE PROVIDED:
+1. Filenames (Highly indicative of user's overall project name)
+2. Distributed content samples (beginning, middle, and end)
+
+GUIDELINES:
+- Title: Actionable and specific. Identify the OVERALL subject. If it's a university catalog, title it 'University of Colorado Course Catalog 2024-25'. Don't get distracted by a single section (like 'Spanish Studies') if the filenames suggest a broader scope.
+- Description: A 1-sentence summary of what's inside.
+- Format: Return ONLY a JSON object with 'title' and 'description' keys.`
             },
             {
               role: "user",
-              content: `Document Content Sample:\n${finalPdfContent?.substring(0, 10000)}`
+              content: contextSnippet
             }
           ],
           response_format: { type: "json_object" }
