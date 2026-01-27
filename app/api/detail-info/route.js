@@ -30,14 +30,14 @@ export async function POST(request) {
             .map(chunk => chunk.content)
             .join('\n\n---\n\n');
 
-        const systemPrompt = `You are Gilda's "Deep Dive" specialist. Your task is to provide a comprehensive, detailed report ONLY on the specific topic: "${searchQuery}".
+        const systemPrompt = `You are Gilda's "Source Insight" specialist. Your task is to provide the EXACT, VERBATIM language and comprehensive details found in the document regarding: "${searchQuery}".
     
 RULES:
-1. Use ONLY the provided document snippets.
+1. Show the original language as it appears in the source snippets.
 2. Provide as much detail as possible (descriptions, dates, codes, requirements, etc.).
-3. Format your response with clear headings and bullet points for readability.
-4. If there are related items mentioned in the snippets, include them as well.
-5. Be professional and highly informative.`;
+3. If there is a "verbatim" section or bulleted list of rules in the snippets, reproduce those accurately.
+4. Format your response with clear headings and bolded key terms.
+5. Do not add outside knowledge. Only use the provided snippets.`;
 
         const completion = await openai.chat.completions.create({
             model: 'gpt-4-turbo',
