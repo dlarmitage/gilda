@@ -13,13 +13,22 @@ export default function SharedGildaPage() {
   const [pdfMetadata, setPdfMetadata] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [userMessage, setUserMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState(null);
   const [brandColor, setBrandColor] = useState('#4880db');
   const [brandTransparency, setBrandTransparency] = useState(0.5);
+  const [userId, setUserId] = useState(null);
+  const [kbTitle, setKbTitle] = useState('Knowledge Base');
+
+  // Item lookup modal states
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [itemDetails, setItemDetails] = useState('');
+  const [isFetchingItem, setIsFetchingItem] = useState(false);
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -78,10 +87,24 @@ export default function SharedGildaPage() {
         setDocuments(data.documents || []);
         setBrandColor(data.brandColor || '#4880db');
         setBrandTransparency(data.brandTransparency !== undefined ? data.brandTransparency : 0.5);
-        setMessages([{
-          role: 'assistant',
-          content: `👋 Hello! I'm Gilda, your AI assistant. I have access to your company's policy documents and I'm here to help answer any questions you might have. I'm multilingual, so feel free to ask your questions in virtually any language. What would you like to know?`
-        }]);
+        setUserId(data.userId);
+
+        // Group documents and find a clean title
+        if (data.documents && data.documents.length > 0) {
+          const firstDoc = data.documents[0].filename;
+          const cleanTitle = firstDoc.replace(/\s*\(Part\s*\d+\)/i, '');
+          setKbTitle(cleanTitle);
+
+          setMessages([{
+            role: 'assistant',
+            content: `👋 Hello! I'm Gilda, your AI assistant. I've been trained on the **${cleanTitle}** knowledge base and I'm here to help you find specific insights. What would you like to know?`
+          }]);
+        } else {
+          setMessages([{
+            role: 'assistant',
+            content: `👋 Hello! I'm Gilda, your AI assistant. I'm ready to answer questions about your documents. What's on your mind?`
+          }]);
+        }
       } else {
         setError(data.error || 'Failed to load shared content');
       }
@@ -93,12 +116,44 @@ export default function SharedGildaPage() {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading || !pdfContent) return;
+  const handleItemLookup = async (queryText) => {
+    setIsFetchingItem(true);
+    setSelectedItem(queryText);
+    setShowItemModal(true);
+    setItemDetails('Performing deep dive search...');
 
-    const userMessage = inputMessage.trim();
-    setInputMessage('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    try {
+      const response = await fetch('/api/detail-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          searchQuery: queryText,
+          userId: userId // From shared data
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setItemDetails(data.details);
+      } else {
+        setItemDetails('Failed to load details.');
+      }
+    } catch (error) {
+      console.error('Error fetching details:', error);
+      setItemDetails('Error loading details.');
+    } finally {
+      setIsFetchingItem(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!userMessage.trim() || isLoading || !pdfContent) return;
+
+    const queryMessage = userMessage.trim();
+    setUserMessage('');
+    setMessages(prev => [...prev, { role: 'user', content: queryMessage }]);
     setIsLoading(true);
 
     try {
@@ -108,7 +163,7 @@ export default function SharedGildaPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: userMessage,
+          message: queryMessage,
           conversationHistory: conversationHistory,
           // Removed pdfContent to avoid 413 Payload Too Large error
           // The server now fetches this from the shared store using shareId
@@ -189,19 +244,9 @@ export default function SharedGildaPage() {
               <span className="text-4xl">🤖</span>
               <h1 className="text-3xl font-extrabold text-gray-900" style={{ letterSpacing: '-0.5px' }}>Gilda</h1>
             </div>
-            <div className="flex items-center">
-              {documents && documents.length > 0 ? (
-                <div className="flex flex-wrap gap-2 items-center">
-                  {documents.map((doc, index) => (
-                    <div key={index} className="inline-flex items-center gap-2 bg-white px-3 py-2 rounded-full text-sm font-medium text-gray-800 border border-gray-200 shadow-sm">
-                      <span>📄</span>
-                      <span>{doc.filename}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <span className="text-gray-800 text-sm">{`📄 ${pdfMetadata?.filename || 'Company Documents'}`}</span>
-              )}
+            <div className="hidden md:flex flex-col items-end">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Knowledge Base</span>
+              <span className="text-gray-900 font-bold truncate max-w-md">{kbTitle}</span>
             </div>
           </div>
         </div>
@@ -225,13 +270,42 @@ export default function SharedGildaPage() {
                 >
                   <div
                     className={`max-w-3xl px-4 py-3 rounded-lg ${message.role === 'user'
-                        ? ''
-                        : 'bg-white text-gray-900 border border-gray-200'
+                      ? ''
+                      : 'bg-white text-gray-900 border border-gray-200'
                       }`}
                     style={messageStyle}
                   >
                     {message.role === 'assistant' ? (
-                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                      <ReactMarkdown
+                        components={{
+                          a: ({ node, ...props }) => {
+                            const href = props.href || '';
+                            if (href.startsWith('#lookup:')) {
+                              const query = decodeURIComponent(href.replace('#lookup:', ''));
+                              return (
+                                <span
+                                  className="deep-dive-link"
+                                  style={{ color: '#4880db', fontWeight: 'bold', cursor: 'pointer', display: 'inline' }}
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleItemLookup(query);
+                                  }}
+                                >
+                                  {props.children}
+                                </span>
+                              );
+                            }
+                            return <a {...props} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} />;
+                          }
+                        }}
+                      >
+                        {message.content.replace(/]\(#lookup:([^)]+)\)/g, (match, query) => {
+                          return `](#lookup:${encodeURIComponent(query)})`;
+                        })}
+                      </ReactMarkdown>
                     ) : (
                       <p>{message.content}</p>
                     )}
@@ -261,23 +335,93 @@ export default function SharedGildaPage() {
           <div className="max-w-4xl mx-auto flex space-x-3">
             <textarea
               ref={inputRef}
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
+              value={userMessage}
+              onChange={(e) => setUserMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask me anything about your company policies..."
-              className="flex-1 resize-none border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder={`Ask me anything about ${kbTitle}...`}
+              className="flex-1 resize-none border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
               rows="1"
               disabled={isLoading}
             />
             <button
               onClick={handleSendMessage}
-              disabled={!inputMessage.trim() || isLoading}
+              disabled={!userMessage.trim() || isLoading}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               Send
             </button>
           </div>
         </div>
+
+        {/* Source Insight Modal */}
+        {showItemModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-[2000] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="p-6 border-b flex justify-between items-center bg-gray-50">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span>🔍</span> {selectedItem} Details
+                </h3>
+                <button
+                  onClick={() => setShowItemModal(false)}
+                  className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8">
+                {isFetchingItem ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                    <p className="text-gray-500 font-medium">Consulting Source Material...</p>
+                  </div>
+                ) : (
+                  <div className="text-gray-800 space-y-4 leading-relaxed">
+                    <ReactMarkdown
+                      components={{
+                        a: ({ node, ...props }) => {
+                          const href = props.href || '';
+                          if (href.startsWith('#lookup:')) {
+                            const query = decodeURIComponent(href.replace('#lookup:', ''));
+                            return (
+                              <span
+                                className="deep-dive-link"
+                                style={{ color: '#4880db', fontWeight: 'bold', cursor: 'pointer', display: 'inline' }}
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleItemLookup(query);
+                                }}
+                              >
+                                {props.children}
+                              </span>
+                            );
+                          }
+                          return <a {...props} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} />;
+                        }
+                      }}
+                    >
+                      {itemDetails.replace(/]\(#lookup:([^)]+)\)/g, (match, query) => {
+                        return `](#lookup:${encodeURIComponent(query)})`;
+                      })}
+                    </ReactMarkdown>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 bg-gray-50 border-t flex justify-end">
+                <button
+                  onClick={() => setShowItemModal(false)}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-md"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DynamicGradient>
   );
