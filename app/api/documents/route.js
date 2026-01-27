@@ -56,7 +56,7 @@ export async function GET(request) {
 // POST - Save user's documents
 export async function POST(request) {
   try {
-    const { userId, documents } = await request.json();
+    const { userId, documents, clearExisting = true } = await request.json();
 
     console.log('POST /api/documents - userId:', userId);
     console.log('POST /api/documents - documents:', documents);
@@ -90,17 +90,19 @@ export async function POST(request) {
       console.log('POST /api/documents - User exists:', user);
     }
 
-    // DELETE ALL existing PDFs for this user first to prevent duplicates
-    console.log('POST /api/documents - Deleting all existing PDFs for user to prevent duplicates');
-    try {
-      await query`
-        DELETE FROM pdf_uploads 
-        WHERE user_id = ${userId}
-      `;
-      console.log('POST /api/documents - All existing PDFs deleted');
-    } catch (deleteError) {
-      console.error('POST /api/documents - Error deleting existing PDFs:', deleteError);
-      // Continue anyway - we'll try to insert new ones
+    // DELETE ALL existing PDFs for this user first to prevent duplicates (only if requested)
+    if (clearExisting) {
+      console.log('POST /api/documents - Deleting all existing PDFs for user to prevent duplicates');
+      try {
+        await query`
+          DELETE FROM pdf_uploads 
+          WHERE user_id = ${userId}
+        `;
+        console.log('POST /api/documents - All existing PDFs deleted');
+      } catch (deleteError) {
+        console.error('POST /api/documents - Error deleting existing PDFs:', deleteError);
+        // Continue anyway - we'll try to insert new ones
+      }
     }
 
     // We'll return a stream to provide real-time progress updates

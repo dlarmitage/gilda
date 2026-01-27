@@ -39,7 +39,7 @@ export async function POST(request) {
         }
 
         if (searchUserId) {
-          relevantChunks = await searchPDFChunks(searchUserId, queryEmbedding, 10);
+          relevantChunks = await searchPDFChunks(searchUserId, queryEmbedding, 15);
           console.log(`Found ${relevantChunks.length} relevant chunks via vector search`);
         }
       } catch (searchError) {

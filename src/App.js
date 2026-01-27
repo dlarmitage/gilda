@@ -287,13 +287,14 @@ export default function App() {
             const batchLimit = 3500000; // ~3.5MB total per request
             let currentBatch = [];
             let currentBatchSize = 0;
+            let batchCount = 0;
 
             for (let i = 0; i < allDocs.length; i++) {
               const doc = allDocs[i];
               const docChars = doc.content?.length || 0;
-              setUploadStatus(`Uploading part ${i + 1} of ${allDocs.length}...`);
               if (currentBatchSize + docChars > batchLimit && currentBatch.length > 0) {
-                await sendBatch(currentBatch);
+                await sendBatch(currentBatch, batchCount === 0);
+                batchCount++;
                 currentBatch = [];
                 currentBatchSize = 0;
               }
@@ -302,15 +303,15 @@ export default function App() {
             }
 
             if (currentBatch.length > 0) {
-              await sendBatch(currentBatch);
+              await sendBatch(currentBatch, batchCount === 0);
             }
           };
 
-          const sendBatch = async (batch) => {
+          const sendBatch = async (batch, isFirst) => {
             const response = await fetch('/api/documents', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId, documents: batch })
+              body: JSON.stringify({ userId, documents: batch, clearExisting: isFirst })
             });
 
             if (!response.ok) {
