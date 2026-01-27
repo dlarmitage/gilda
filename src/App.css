@@ -25,8 +25,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-screen p {
@@ -92,8 +97,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
@@ -101,6 +111,7 @@
     opacity: 0;
     transform: translateY(20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -200,15 +211,15 @@
     margin: 20px;
     max-width: none;
   }
-  
+
   .modal-header {
     padding: 20px 20px 0 20px;
   }
-  
+
   .modal-body {
     padding: 20px;
   }
-  
+
   .upload-area {
     padding: 40px 20px;
   }
@@ -248,6 +259,69 @@
   font-weight: 600;
   color: #111827;
   margin: 0 0 8px 0 !important;
+}
+
+/* Delete Confirmation Styles */
+.confirmation-modal {
+  max-width: 400px !important;
+}
+
+.warning-box {
+  background: #fff7ed;
+  border: 1px solid #ffedd5;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.warning-icon {
+  font-size: 20px;
+}
+
+.warning-box p {
+  margin: 0;
+  font-size: 13px;
+  color: #9a3412;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  background: #f9fafb;
+}
+
+.confirm-delete-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #dc2626;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirm-delete-btn:hover {
+  background: #b91c1c;
 }
 
 .upload-warning-text {

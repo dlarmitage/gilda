@@ -62,6 +62,8 @@ export default function App() {
   const [brandTransparency, setBrandTransparency] = useState(0.5);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -386,9 +388,20 @@ export default function App() {
     setShowUpload(true);
   };
 
-  const handleRemoveDocument = async (documentId) => {
+  const handleRemoveDocument = (documentId) => {
+    const doc = documents.find(d => d.id === documentId);
+    setDocumentToDelete(doc);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!documentToDelete) return;
+
+    const documentId = documentToDelete.id;
     const updatedDocuments = documents.filter(doc => doc.id !== documentId);
     setDocuments(updatedDocuments);
+    setShowDeleteConfirm(false);
+    setDocumentToDelete(null);
 
     // Update database if user is authenticated
     const userId = user?.id;
@@ -401,17 +414,13 @@ export default function App() {
           },
           body: JSON.stringify({
             userId,
-            documents: updatedDocuments
+            documents: updatedDocuments,
+            clearExisting: true // Re-save the final list
           })
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Failed to update documents in database:', response.statusText);
-          console.error('Error response:', errorText);
-        } else {
-          const updateData = await response.json();
-          console.log('Documents updated in database successfully:', updateData);
+          console.error('Failed to update documents in database');
         }
       } catch (error) {
         console.error('Error updating documents:', error);
@@ -419,12 +428,10 @@ export default function App() {
     }
 
     if (updatedDocuments.length === 0) {
-      // No documents left
       setPdfLoaded(false);
       setPdfContent(null);
       setPdfMetadata(null);
     } else {
-      // Update combined content and metadata
       const combinedContent = updatedDocuments
         .map(doc => `=== ${doc.filename} ===\n\n${doc.content}\n\n`)
         .join('');
@@ -566,6 +573,31 @@ export default function App() {
                     <p className="upload-warning-text">Don't close this window, we're building your AI index.</p>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+            <div className="modal confirmation-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Remove Document?</h2>
+                <button className="close-btn" onClick={() => setShowDeleteConfirm(false)}>×</button>
+              </div>
+              <div className="modal-body">
+                <p className="modal-text">
+                  Are you sure you want to remove <strong>{documentToDelete?.filename}</strong>?
+                </p>
+                <div className="warning-box">
+                  <span className="warning-icon">⚠️</span>
+                  <p>Deleting this will remove all indexed AI context for this document. You will need to re-upload and re-index if you want to use it again.</p>
+                </div>
+                <div className="modal-actions">
+                  <button className="cancel-btn" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
+                  <button className="confirm-delete-btn" onClick={confirmDelete}>Remove Document</button>
+                </div>
               </div>
             </div>
           </div>
