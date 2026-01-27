@@ -316,21 +316,21 @@
 }
 
 .message.assistant .message-content p {
-  margin: 2px 0;
+  margin: 0 !important;
 }
 
 .message.assistant .message-content ul,
 .message.assistant .message-content ol {
-  margin: 4px 0;
+  margin: 2px 0;
   padding-left: 20px;
 }
 
 .message.assistant .message-content li {
-  margin: 1px 0;
+  margin: 0;
 }
 
 .message.assistant .message-content li p {
-  margin: 0;
+  margin: 0 !important;
 }
 
 .message.assistant .message-content strong {
@@ -821,23 +821,16 @@
   padding: 4px 12px;
 } */
 
-/* Detail Link Button */
-.detail-link-btn {
-  background: none;
-  border: none;
-  padding: 0;
+/* Deep Dive Link (Span-based to stop browser navigation) */
+.deep-dive-link {
   color: #4880db;
-  text-decoration: none;
+  font-weight: 700;
   cursor: pointer;
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  margin: 0;
   display: inline;
+  transition: all 0.2s ease;
 }
 
-.detail-link-btn:hover {
+.deep-dive-link:hover {
   color: #3b6ebf;
   text-decoration: underline;
   background: rgba(72, 128, 219, 0.05);
@@ -846,7 +839,7 @@
 
 /* Detail Modal Extensions */
 .detail-modal {
-  max-width: 600px !important;
+  max-width: 700px !important;
 }
 
 .detail-modal-content {

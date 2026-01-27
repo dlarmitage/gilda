@@ -8,36 +8,44 @@ const openai = new OpenAI({
 
 export async function POST(request) {
     try {
-        const { itemIdentifier, userId } = await request.json();
+        const { searchQuery, userId } = await request.json();
 
-        if (!itemIdentifier || !userId) {
+        if (!searchQuery || !userId) {
             return Response.json(
-                { error: 'Identifier and User ID are required' },
+                { error: 'Search query and User ID are required' },
                 { status: 400 }
             );
         }
 
-        // Use RAG to find the most relevant information about this specific identifier
-        const queryEmbedding = await generateEmbeddings(`Detailed information about ${itemIdentifier}`);
-        const relevantChunks = await searchPDFChunks(userId, queryEmbedding, 10);
+        // Use RAG to find everything relevant to the specific search query
+        console.log(`Performing deep dive RAG for: "${searchQuery}"`);
+        const queryEmbedding = await generateEmbeddings(`Find all detailed information about: ${searchQuery}`);
+        const relevantChunks = await searchPDFChunks(userId, queryEmbedding, 15); // Increased to 15 for deep dives
 
         if (relevantChunks.length === 0) {
-            return Response.json({ message: 'Information not found.' });
+            return Response.json({ details: `I couldn't find any specific information about "${searchQuery}" in the document.` });
         }
 
         const context = relevantChunks
             .map(chunk => chunk.content)
             .join('\n\n---\n\n');
 
-        const systemPrompt = `You are a helpful knowledge assistant. Provide a detailed summary about "${itemIdentifier}" based ONLY on the provided snippets. Include all relevant details, descriptions, and specifications found in the text.`;
+        const systemPrompt = `You are Gilda's "Deep Dive" specialist. Your task is to provide a comprehensive, detailed report ONLY on the specific topic: "${searchQuery}".
+    
+RULES:
+1. Use ONLY the provided document snippets.
+2. Provide as much detail as possible (descriptions, dates, codes, requirements, etc.).
+3. Format your response with clear headings and bullet points for readability.
+4. If there are related items mentioned in the snippets, include them as well.
+5. Be professional and highly informative.`;
 
         const completion = await openai.chat.completions.create({
             model: 'gpt-4-turbo',
             messages: [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: `Snippets from the document:\n${context}` }
+                { role: 'user', content: `Snippets from the document regarding "${searchQuery}":\n${context}` }
             ],
-            max_completion_tokens: 1000,
+            max_completion_tokens: 1200,
         });
 
         return Response.json({

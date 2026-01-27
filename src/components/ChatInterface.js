@@ -128,11 +128,11 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
     }
   };
 
-  const handleItemLookup = async (identifier) => {
+  const handleItemLookup = async (queryText) => {
     setIsFetchingItem(true);
-    setSelectedItem(identifier);
+    setSelectedItem(queryText);
     setShowItemModal(true);
-    setItemDetails('Fetching details...');
+    setItemDetails('Performing deep dive search...');
 
     try {
       const response = await fetch('/api/detail-info', {
@@ -141,7 +141,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          itemIdentifier: identifier,
+          searchQuery: queryText,
           userId: user?.id
         })
       });
@@ -402,41 +402,43 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                     components={{
                       a: ({ node, ...props }) => {
                         const href = props.href || '';
-                        const lowercaseHref = href.toLowerCase();
 
-                        // Check if it's an external link
-                        const isExternal = lowercaseHref.startsWith('http') ||
-                          lowercaseHref.startsWith('www') ||
-                          lowercaseHref.startsWith('mailto:') ||
-                          lowercaseHref.startsWith('tel:');
-
-                        if (!isExternal) {
-                          // Handle as an internal detail lookup
-                          // Extract identifier - remove prefixes if present (detail: or course:)
-                          let identifier = href;
-                          if (lowercaseHref.startsWith('detail:') || lowercaseHref.startsWith('course:')) {
-                            identifier = href.split(':').slice(1).join(':');
-                          }
-
+                        // Internal lookup links always start with #lookup:
+                        if (href.startsWith('#lookup:')) {
+                          const query = href.replace('#lookup:', '');
                           return (
-                            <button
-                              type="button"
-                              className="detail-link-btn"
+                            <span
+                              className="deep-dive-link"
+                              role="button"
+                              tabIndex={0}
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                if (identifier) {
-                                  handleItemLookup(identifier);
+                                handleItemLookup(query);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  handleItemLookup(query);
                                 }
                               }}
                             >
                               {props.children}
-                            </button>
+                            </span>
                           );
                         }
 
-                        // For external links, open in new tab
-                        return <a {...props} target="_blank" rel="noopener noreferrer" />;
+                        // External links - open in new tab
+                        return (
+                          <a
+                            {...props}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {props.children}
+                          </a>
+                        );
                       }
                     }}
                   >
