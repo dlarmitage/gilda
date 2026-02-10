@@ -107,23 +107,43 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
         body: JSON.stringify({
           message: userMessage,
           conversationHistory: conversationHistory,
-          // Removed pdfContent to avoid 413 Payload Too Large error
-          // The server now fetches this from the DB using userId
           userId: user?.id,
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to get response');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get response');
       }
 
-      // Add assistant message to display
-      setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+      // Add initial empty assistant message
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
-      // Update conversation history
-      setConversationHistory(data.conversationHistory);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantResponse = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        assistantResponse += chunk;
+
+        // Update the last message (the assistant's) with the new chunk
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1].content = assistantResponse;
+          return newMessages;
+        });
+      }
+
+      // Update conversation history after stream completes
+      setConversationHistory(prev => [
+        ...prev,
+        { role: 'user', content: userMessage },
+        { role: 'assistant', content: assistantResponse }
+      ]);
 
       // Focus back on input after AI responds
       setTimeout(() => {

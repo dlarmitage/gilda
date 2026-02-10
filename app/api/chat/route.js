@@ -167,23 +167,38 @@ Remember: Be aggressive with details. If the user asks for a list, give them the
       { role: 'user', content: message }
     ];
 
-    // Call OpenAI API
-    const completion = await openai.chat.completions.create({
+    // Call OpenAI API with streaming enabled
+    const stream = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
       messages: messages,
       max_completion_tokens: 1000,
+      stream: true,
     });
 
-    const assistantMessage = completion.choices[0].message.content;
+    // Create a ReadableStream to stream the response
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        try {
+          for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) {
+              controller.enqueue(encoder.encode(content));
+            }
+          }
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    });
 
-    return Response.json({
-      response: assistantMessage,
-      message: assistantMessage, // Keep both for compatibility
-      conversationHistory: [
-        ...(conversationHistory || []),
-        { role: 'user', content: message },
-        { role: 'assistant', content: assistantMessage }
-      ]
+    return new Response(readableStream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
   } catch (error) {
     console.error('Error in chat endpoint:', error);

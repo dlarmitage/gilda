@@ -169,20 +169,42 @@ export default function SharedGildaPage() {
         body: JSON.stringify({
           message: queryMessage,
           conversationHistory: conversationHistory,
-          // Removed pdfContent to avoid 413 Payload Too Large error
-          // The server now fetches this from the shared store using shareId
           shareId: shareId,
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to get response');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get response');
       }
 
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
-      setConversationHistory(prev => [...prev, { role: 'user', content: userMessage }, { role: 'assistant', content: data.response }]);
+      // Add initial empty assistant message
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantResponse = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        assistantResponse += chunk;
+
+        // Update the last message (the assistant's) with the new chunk
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1].content = assistantResponse;
+          return newMessages;
+        });
+      }
+
+      setConversationHistory(prev => [
+        ...prev,
+        { role: 'user', content: queryMessage },
+        { role: 'assistant', content: assistantResponse }
+      ]);
 
       // Focus back on input
       setTimeout(() => {
