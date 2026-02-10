@@ -34,6 +34,14 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
     scrollToBottom();
   }, [messages]);
 
+  // Clear chat when documents change (upload or remove)
+  useEffect(() => {
+    if (messages.length > 0) {
+      setMessages([]);
+      setConversationHistory([]);
+    }
+  }, [documents]);
+
   // Function to determine if a color is light or dark using Rec. 709 luminance
   const getContrastColor = (hexColor) => {
     // Default to dark text if no color
