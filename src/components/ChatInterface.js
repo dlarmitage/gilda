@@ -18,8 +18,10 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
   const [itemDetails, setItemDetails] = useState('');
   const [isFetchingItem, setIsFetchingItem] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const prevDocsRef = useRef(documents);
 
   // Debug logging
   console.log('ChatInterface received documents:', documents);
@@ -36,10 +38,16 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
 
   // Clear chat when documents change (upload or remove)
   useEffect(() => {
-    if (messages.length > 0) {
+    // Check if the documents actually changed (not just a reference change)
+    const currentIds = (documents || []).map(d => d.id).sort().join(',');
+    const prevIds = (prevDocsRef.current || []).map(d => d.id).sort().join(',');
+
+    // Only clear if we have a previous state and the IDs differ, and there are messages
+    if (prevDocsRef.current && currentIds !== prevIds && messages.length > 0) {
       setMessages([]);
       setConversationHistory([]);
     }
+    prevDocsRef.current = documents;
   }, [documents]);
 
   // Function to determine if a color is light or dark using Rec. 709 luminance
@@ -116,8 +124,9 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
         throw new Error(errorData.error || 'Failed to get response');
       }
 
-      // Add initial empty assistant message
+      // Add initial empty assistant message and switch to streaming mode
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+      setIsStreaming(true);
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -133,7 +142,9 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
         // Update the last message (the assistant's) with the new chunk
         setMessages(prev => {
           const newMessages = [...prev];
-          newMessages[newMessages.length - 1].content = assistantResponse;
+          if (newMessages.length > 0) {
+            newMessages[newMessages.length - 1].content = assistantResponse;
+          }
           return newMessages;
         });
       }
@@ -162,6 +173,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
       }, 100);
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
     }
   };
 
@@ -496,7 +508,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
           );
         })}
 
-        {isLoading && (
+        {isLoading && !isStreaming && (
           <div className="message assistant">
             <div className="message-avatar">🤖</div>
             <div className="message-content typing-indicator">
