@@ -47,19 +47,26 @@ export default function SharedGildaPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Function to determine if a color is light or dark
-  const isLightColor = (hexColor) => {
+  // Function to determine if a color is light or dark using Rec. 709 luminance
+  const getContrastColor = (hexColor) => {
+    // Default to dark text if no color
+    if (!hexColor) return '#1f2937';
+
     // Convert hex to RGB
     const hex = hexColor.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
 
-    // Calculate luminance
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    // If parsing failed, return dark text as fallback
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return '#1f2937';
 
-    // Return true if light (luminance > 0.5)
-    return luminance > 0.5;
+    // Calculate relative luminance using Rec. 709 formula
+    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+
+    // Return dark gray for light backgrounds, white for dark backgrounds
+    // Increased threshold to 0.6 to favor white text on medium-brightness colors
+    return luminance > 0.6 ? '#1f2937' : '#ffffff';
   };
 
   // Create gradient color (slightly darker version)
@@ -253,7 +260,7 @@ export default function SharedGildaPage() {
           <div className="max-w-4xl mx-auto space-y-4">
             {messages.map((message, index) => {
               const isUser = message.role === 'user';
-              const textColor = isUser ? (isLightColor(brandColor) ? '#1f2937' : '#ffffff') : undefined;
+              const textColor = isUser ? getContrastColor(brandColor) : undefined;
               const gradientEnd = isUser ? getGradientEndColor(brandColor) : undefined;
               const messageStyle = isUser ? {
                 background: `linear-gradient(135deg, ${brandColor} 0%, ${gradientEnd} 100%)`,
@@ -275,6 +282,7 @@ export default function SharedGildaPage() {
                     {message.role === 'assistant' ? (
                       <ReactMarkdown
                         components={{
+                          strong: ({ children }) => <strong style={{ color: brandColor, fontWeight: '700' }}>{children}</strong>,
                           a: ({ node, ...props }) => {
                             const href = props.href || '';
                             if (href.startsWith('#lookup:')) {
@@ -282,7 +290,7 @@ export default function SharedGildaPage() {
                               return (
                                 <span
                                   className="deep-dive-link"
-                                  style={{ color: '#4880db', fontWeight: 'bold', cursor: 'pointer', display: 'inline' }}
+                                  style={{ color: brandColor, fontWeight: 'bold', cursor: 'pointer', display: 'inline' }}
                                   role="button"
                                   tabIndex={0}
                                   onClick={(e) => {
@@ -300,7 +308,8 @@ export default function SharedGildaPage() {
                         }}
                       >
                         {message.content.replace(/]\(#lookup:([^)]+)\)/g, (match, query) => {
-                          return `](#lookup:${encodeURIComponent(query)})`;
+                          const cleanQuery = query.replace(/%20/g, ' ');
+                          return `](#lookup:${encodeURIComponent(cleanQuery)})`;
                         })}
                       </ReactMarkdown>
                     ) : (
@@ -356,11 +365,12 @@ export default function SharedGildaPage() {
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
               <div className="p-6 border-b flex justify-between items-center bg-gray-50">
                 <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <span>🔍</span> {selectedItem} Details
+                  <span>🔍</span> {selectedItem ? decodeURIComponent(selectedItem).replace(/%20/g, ' ') : ''} Details
                 </h3>
                 <button
                   onClick={() => setShowItemModal(false)}
-                  className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500"
+                  className="p-2 hover:bg-opacity-10 rounded-full transition-colors"
+                  style={{ color: brandColor, backgroundColor: `${brandColor}1A` }} // 1A is ~10% opacity
                 >
                   ✕
                 </button>
@@ -369,13 +379,14 @@ export default function SharedGildaPage() {
               <div className="flex-1 overflow-y-auto p-8">
                 {isFetchingItem ? (
                   <div className="flex flex-col items-center justify-center py-12">
-                    <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                    <div className="w-10 h-10 border-4 border-blue-100 rounded-full animate-spin mb-4" style={{ borderTopColor: brandColor }}></div>
                     <p className="text-gray-500 font-medium">Consulting Source Material...</p>
                   </div>
                 ) : (
                   <div className="text-gray-800 space-y-4 leading-relaxed">
                     <ReactMarkdown
                       components={{
+                        strong: ({ children }) => <strong style={{ color: brandColor, fontWeight: '700' }}>{children}</strong>,
                         a: ({ node, ...props }) => {
                           const href = props.href || '';
                           if (href.startsWith('#lookup:')) {
@@ -383,7 +394,7 @@ export default function SharedGildaPage() {
                             return (
                               <span
                                 className="deep-dive-link"
-                                style={{ color: '#4880db', fontWeight: 'bold', cursor: 'pointer', display: 'inline' }}
+                                style={{ color: brandColor, fontWeight: 'bold', cursor: 'pointer', display: 'inline' }}
                                 role="button"
                                 tabIndex={0}
                                 onClick={(e) => {
@@ -401,7 +412,8 @@ export default function SharedGildaPage() {
                       }}
                     >
                       {itemDetails.replace(/]\(#lookup:([^)]+)\)/g, (match, query) => {
-                        return `](#lookup:${encodeURIComponent(query)})`;
+                        const cleanQuery = query.replace(/%20/g, ' ');
+                        return `](#lookup:${encodeURIComponent(cleanQuery)})`;
                       })}
                     </ReactMarkdown>
                   </div>
@@ -411,7 +423,11 @@ export default function SharedGildaPage() {
               <div className="p-4 bg-gray-50 border-t flex justify-end">
                 <button
                   onClick={() => setShowItemModal(false)}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-md"
+                  className="px-6 py-2 text-white rounded-lg font-bold hover:opacity-90 transition-colors shadow-md"
+                  style={{
+                    backgroundColor: brandColor,
+                    color: getContrastColor(brandColor)
+                  }}
                 >
                   Close
                 </button>

@@ -34,19 +34,28 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
     scrollToBottom();
   }, [messages]);
 
-  // Function to determine if a color is light or dark
-  const isLightColor = (hexColor) => {
+  // Function to determine if a color is light or dark using Rec. 709 luminance
+  const getContrastColor = (hexColor) => {
+    // Default to dark text if no color
+    if (!hexColor) return '#1f2937';
+
     // Convert hex to RGB
     const hex = hexColor.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
 
-    // Calculate luminance
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    // If parsing failed, return dark text as fallback
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return '#1f2937';
 
-    // Return true if light (luminance > 0.5)
-    return luminance > 0.5;
+    // Calculate relative luminance using Rec. 709 formula
+    // L = 0.2126 * R + 0.7152 * G + 0.0722 * B
+    // We use a threshold that favors white text for better readability on medium colors
+    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+
+    // Return dark gray for light backgrounds, white for dark backgrounds
+    // Increased threshold to 0.6 to favor white text on medium-brightness colors
+    return luminance > 0.6 ? '#1f2937' : '#ffffff';
   };
 
   // Create gradient color (slightly darker version)
@@ -384,7 +393,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
 
         {messages.map((msg, index) => {
           const isUser = msg.role === 'user';
-          const textColor = isUser ? (isLightColor(brandColor) ? '#1f2937' : '#ffffff') : undefined;
+          const textColor = isUser ? getContrastColor(brandColor) : undefined;
           const gradientEnd = isUser ? getGradientEndColor(brandColor) : undefined;
           const messageStyle = isUser ? {
             background: `linear-gradient(135deg, ${brandColor} 0%, ${gradientEnd} 100%)`,
@@ -400,6 +409,7 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                 {msg.role === 'assistant' ? (
                   <ReactMarkdown
                     components={{
+                      strong: ({ children }) => <strong style={{ color: brandColor, fontWeight: '700' }}>{children}</strong>,
                       a: ({ node, ...props }) => {
                         const href = props.href || '';
 
@@ -445,7 +455,9 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                   >
                     {/* Pre-process assistant messages to encode spaces in lookup links so react-markdown doesn't break */}
                     {msg.content.replace(/]\(#lookup:([^)]+)\)/g, (match, query) => {
-                      return `](#lookup:${encodeURIComponent(query)})`;
+                      // Remove any existing encoding to prevent double-encoding
+                      const cleanQuery = query.replace(/%20/g, ' ');
+                      return `](#lookup:${encodeURIComponent(cleanQuery)})`;
                     })}
                   </ReactMarkdown>
                 ) : (
@@ -601,21 +613,27 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
         <div className="modal-overlay detail-modal-overlay" onClick={() => setShowItemModal(false)}>
           <div className="modal detail-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>🔍 {selectedItem} Details</h3>
-              <button type="button" className="close-btn" onClick={() => setShowItemModal(false)}>
+              <h3>🔍 {selectedItem ? decodeURIComponent(selectedItem).replace(/%20/g, ' ') : ''} Details</h3>
+              <button
+                type="button"
+                className="close-btn"
+                onClick={() => setShowItemModal(false)}
+                style={{ color: brandColor }}
+              >
                 ×
               </button>
             </div>
             <div className="modal-content detail-modal-content">
               {isFetchingItem ? (
                 <div className="detail-loading">
-                  <div className="spinner"></div>
+                  <div className="spinner" style={{ borderTopColor: brandColor }}></div>
                   <p>Searching document for details...</p>
                 </div>
               ) : (
                 <div className="detail-details-text">
                   <ReactMarkdown
                     components={{
+                      strong: ({ children }) => <strong style={{ color: brandColor, fontWeight: '700' }}>{children}</strong>,
                       a: ({ node, ...props }) => {
                         const href = props.href || '';
                         if (href.startsWith('#lookup:')) {
@@ -640,14 +658,23 @@ export default function ChatInterface({ pdfContent, pdfMetadata, documents, onUp
                     }}
                   >
                     {itemDetails.replace(/]\(#lookup:([^)]+)\)/g, (match, query) => {
-                      return `](#lookup:${encodeURIComponent(query)})`;
+                      const cleanQuery = query.replace(/%20/g, ' ');
+                      return `](#lookup:${encodeURIComponent(cleanQuery)})`;
                     })}
                   </ReactMarkdown>
                 </div>
               )}
             </div>
             <div className="modal-footer">
-              <button type="button" className="close-modal-btn" onClick={() => setShowItemModal(false)}>
+              <button
+                type="button"
+                className="close-modal-btn"
+                onClick={() => setShowItemModal(false)}
+                style={{
+                  background: brandColor,
+                  color: getContrastColor(brandColor)
+                }}
+              >
                 Close
               </button>
             </div>

@@ -864,8 +864,8 @@
 .detail-loading .spinner {
   width: 30px;
   height: 30px;
-  border: 3px solid #f3f4f6 !important;
-  border-top-color: #4880db !important;
+  border: 3px solid #f3f4f6;
+  border-top-color: #4880db;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
